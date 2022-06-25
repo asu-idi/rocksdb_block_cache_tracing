@@ -1983,6 +1983,28 @@ Status DBImpl::GetImpl(const ReadOptions& read_options, const Slice& key,
   auto cfh = static_cast_with_check<ColumnFamilyHandleImpl>(
       get_impl_options.column_family);
   auto cfd = cfh->cfd();
+  if (tracer_.get() == nullptr) {
+    InstrumentedMutexLock lock(&trace_mutex_);
+    if (tracer_.get() == nullptr) {
+      TraceOptions query_trace_options;
+      TraceOptions block_trace_options;
+      query_trace_options.max_trace_file_size = 1024;
+      std::string query_trace_filename =
+          "/tmp/trace/trace." + std::to_string(env_->NowMicros());
+      std::string block_trace_filename =
+          "/tmp/trace/block_cache_trace." + std::to_string(env_->NowMicros());
+      EnvOptions env_opts;
+      std::unique_ptr<TraceWriter> query_trace_writer;
+      std::unique_ptr<TraceWriter> block_trace_writer;
+      NewFileTraceWriter(env_, env_opts, query_trace_filename,
+                         &query_trace_writer);
+      tracer_.reset(new Tracer(GetSystemClock(), query_trace_options,
+                               std::move(query_trace_writer)));
+      NewFileTraceWriter(env_, env_opts, block_trace_filename,
+                         &block_trace_writer);
+      StartBlockCacheTrace(block_trace_options, std::move(block_trace_writer));
+    }
+  }
 
   if (tracer_) {
     // TODO: This mutex should be removed later, to improve performance when
@@ -2283,6 +2305,29 @@ std::vector<Status> DBImpl::MultiGet(
       }
     }
     return stat_list;
+  }
+
+  if (tracer_.get() == nullptr) {
+    InstrumentedMutexLock lock(&trace_mutex_);
+    if (tracer_.get() == nullptr) {
+      TraceOptions query_trace_options;
+      TraceOptions block_trace_options;
+      query_trace_options.max_trace_file_size = 1024;
+      std::string query_trace_filename =
+          "/tmp/trace/trace." + std::to_string(env_->NowMicros());
+      std::string block_trace_filename =
+          "/tmp/trace/block_cache_trace." + std::to_string(env_->NowMicros());
+      EnvOptions env_opts;
+      std::unique_ptr<TraceWriter> query_trace_writer;
+      std::unique_ptr<TraceWriter> block_trace_writer;
+      NewFileTraceWriter(env_, env_opts, query_trace_filename,
+                         &query_trace_writer);
+      tracer_.reset(new Tracer(GetSystemClock(), query_trace_options,
+                               std::move(query_trace_writer)));
+      NewFileTraceWriter(env_, env_opts, block_trace_filename,
+                         &block_trace_writer);
+      StartBlockCacheTrace(block_trace_options, std::move(block_trace_writer));
+    }
   }
 
   if (tracer_) {
@@ -2610,6 +2655,29 @@ void DBImpl::MultiGet(const ReadOptions& read_options, const size_t num_keys,
       }
     }
     return;
+  }
+
+  if (tracer_.get() == nullptr) {
+    InstrumentedMutexLock lock(&trace_mutex_);
+    if (tracer_.get() == nullptr) {
+      TraceOptions query_trace_options;
+      TraceOptions block_trace_options;
+      query_trace_options.max_trace_file_size = 1024;
+      std::string query_trace_filename =
+          "/tmp/trace/trace." + std::to_string(env_->NowMicros());
+      std::string block_trace_filename =
+          "/tmp/trace/block_cache_trace." + std::to_string(env_->NowMicros());
+      EnvOptions env_opts;
+      std::unique_ptr<TraceWriter> query_trace_writer;
+      std::unique_ptr<TraceWriter> block_trace_writer;
+      NewFileTraceWriter(env_, env_opts, query_trace_filename,
+                         &query_trace_writer);
+      tracer_.reset(new Tracer(GetSystemClock(), query_trace_options,
+                               std::move(query_trace_writer)));
+      NewFileTraceWriter(env_, env_opts, block_trace_filename,
+                         &block_trace_writer);
+      StartBlockCacheTrace(block_trace_options, std::move(block_trace_writer));
+    }
   }
 
   if (tracer_) {
