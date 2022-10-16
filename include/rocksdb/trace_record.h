@@ -39,12 +39,14 @@ enum TraceType : char {
   kIOTracer = 12,
   // Query level tracing related trace type.
   kTraceMultiGet = 13,
+  kTraceIteratorNext = 14,
   // All trace types should be added before kTraceMax
   kTraceMax,
 };
 
 class GetQueryTraceRecord;
 class IteratorSeekQueryTraceRecord;
+class IteratorNextQueryTraceRecord;
 class MultiGetQueryTraceRecord;
 class TraceRecordResult;
 class WriteQueryTraceRecord;
@@ -73,6 +75,9 @@ class TraceRecord {
                           std::unique_ptr<TraceRecordResult>* result) = 0;
 
     virtual Status Handle(const IteratorSeekQueryTraceRecord& record,
+                          std::unique_ptr<TraceRecordResult>* result) = 0;
+
+    virtual Status Handle(const IteratorNextQueryTraceRecord& record,
                           std::unique_ptr<TraceRecordResult>* result) = 0;
 
     virtual Status Handle(const MultiGetQueryTraceRecord& record,
@@ -212,6 +217,43 @@ class IteratorSeekQueryTraceRecord : public IteratorQueryTraceRecord {
 
  private:
   SeekType type_;
+  uint32_t cf_id_;
+  PinnableSlice key_;
+};
+
+// Trace record for Iterator::Seek() and Iterator::SeekForPrev() operation.
+class IteratorNextQueryTraceRecord : public IteratorQueryTraceRecord {
+ public:
+  IteratorNextQueryTraceRecord(uint32_t column_family_id, PinnableSlice&& key,
+                               uint64_t timestamp);
+
+  IteratorNextQueryTraceRecord(uint32_t column_family_id,
+                               const std::string& key, uint64_t timestamp);
+
+  IteratorNextQueryTraceRecord(uint32_t column_family_id, PinnableSlice&& key,
+                               PinnableSlice&& lower_bound,
+                               PinnableSlice&& upper_bound, uint64_t timestamp);
+
+  IteratorNextQueryTraceRecord(uint32_t column_family_id,
+                               const std::string& key,
+                               const std::string& lower_bound,
+                               const std::string& upper_bound,
+                               uint64_t timestamp);
+
+  virtual ~IteratorNextQueryTraceRecord() override;
+
+  TraceType GetTraceType() const override { return kTraceIteratorNext; }
+
+  // Column family ID.
+  virtual uint32_t GetColumnFamilyID() const;
+
+  // Key returned by next.
+  virtual Slice GetKey() const;
+
+  Status Accept(Handler* handler,
+                std::unique_ptr<TraceRecordResult>* result) override;
+
+ private:
   uint32_t cf_id_;
   PinnableSlice key_;
 };

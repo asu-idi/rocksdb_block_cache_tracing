@@ -35,7 +35,9 @@ enum TraceOperationType : int {
   kIteratorSeek = 6,
   kIteratorSeekForPrev = 7,
   kMultiGet = 8,
-  kTaTypeNum = 9
+  kIteratorNext = 9,
+  kTaTypeNum = 10,
+
 };
 
 struct TraceUnit {
@@ -194,6 +196,8 @@ class TraceAnalyzer : private TraceRecord::Handler,
                 std::unique_ptr<TraceRecordResult>* result) override;
   Status Handle(const IteratorSeekQueryTraceRecord& record,
                 std::unique_ptr<TraceRecordResult>* result) override;
+  Status Handle(const IteratorNextQueryTraceRecord& record,
+                std::unique_ptr<TraceRecordResult>* result) override;
   Status Handle(const MultiGetQueryTraceRecord& record,
                 std::unique_ptr<TraceRecordResult>* result) override;
 
@@ -275,6 +279,7 @@ class TraceAnalyzer : private TraceRecord::Handler,
   uint64_t total_writes_;
   uint64_t total_seeks_;
   uint64_t total_seek_prevs_;
+  uint64_t total_nexts_;
   uint64_t total_multigets_;
   uint64_t trace_create_time_;
   uint64_t begin_time_;
