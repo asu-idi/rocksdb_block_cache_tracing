@@ -187,16 +187,10 @@ void DBIter::Next() {
     } else {
       upper_bound = Slice("");
     }
-    if (iter_.Valid()) {
-      db_impl_
-          ->TraceIteratorNext(cfd_->GetID(), iter_.key(), lower_bound,
-                              upper_bound)
-          .PermitUncheckedError();
-    } else {
-      db_impl_
-          ->TraceIteratorNext(cfd_->GetID(), Slice(), lower_bound, upper_bound)
-          .PermitUncheckedError();
-    }
+    db_impl_
+        ->TraceIteratorNext(cfd_->GetID(), iter_.key(), lower_bound,
+                            upper_bound)
+        .PermitUncheckedError();
   }
 #endif  // ROCKSDB_LITE
 }
