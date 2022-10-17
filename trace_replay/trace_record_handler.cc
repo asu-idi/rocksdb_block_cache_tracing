@@ -140,54 +140,6 @@ Status TraceExecutionHandler::Handle(
 }
 
 Status TraceExecutionHandler::Handle(
-    const IteratorNextQueryTraceRecord& record,
-    std::unique_ptr<TraceRecordResult>* result) {
-  if (result != nullptr) {
-    result->reset(nullptr);
-  }
-  auto it = cf_map_.find(record.GetColumnFamilyID());
-  if (it == cf_map_.end()) {
-    return Status::Corruption("Invalid Column Family ID.");
-  }
-
-  ReadOptions r_opts = read_opts_;
-  Slice lower = record.GetLowerBound();
-  if (!lower.empty()) {
-    r_opts.iterate_lower_bound = &lower;
-  }
-  Slice upper = record.GetUpperBound();
-  if (!upper.empty()) {
-    r_opts.iterate_upper_bound = &upper;
-  }
-  Iterator* single_iter = db_->NewIterator(r_opts, it->second);
-
-  uint64_t start = clock_->NowMicros();
-
-  single_iter->Next();
-
-  uint64_t end = clock_->NowMicros();
-
-  Status s = single_iter->status();
-  if (s.ok() && result != nullptr) {
-    if (single_iter->Valid()) {
-      PinnableSlice ps_key;
-      ps_key.PinSelf(single_iter->key());
-      PinnableSlice ps_value;
-      ps_value.PinSelf(single_iter->value());
-      result->reset(new IteratorTraceExecutionResult(
-          true, s, std::move(ps_key), std::move(ps_value), start, end,
-          record.GetTraceType()));
-    } else {
-      result->reset(new IteratorTraceExecutionResult(
-          false, s, "", "", start, end, record.GetTraceType()));
-    }
-  }
-  delete single_iter;
-
-  return s;
-}
-
-Status TraceExecutionHandler::Handle(
     const MultiGetQueryTraceRecord& record,
     std::unique_ptr<TraceRecordResult>* result) {
   if (result != nullptr) {

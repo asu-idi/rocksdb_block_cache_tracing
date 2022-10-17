@@ -173,26 +173,6 @@ void DBIter::Next() {
     local_stats_.next_found_count_++;
     local_stats_.bytes_read_ += (key().size() + value().size());
   }
-#ifndef ROCKSDB_LITE
-  if (db_impl_ != nullptr && cfd_ != nullptr) {
-    // TODO: What do we do if this returns an error?
-    Slice lower_bound, upper_bound;
-    if (iterate_lower_bound_ != nullptr) {
-      lower_bound = *iterate_lower_bound_;
-    } else {
-      lower_bound = Slice("");
-    }
-    if (iterate_upper_bound_ != nullptr) {
-      upper_bound = *iterate_upper_bound_;
-    } else {
-      upper_bound = Slice("");
-    }
-    db_impl_
-        ->TraceIteratorNext(cfd_->GetID(), iter_.key(), lower_bound,
-                            upper_bound)
-        .PermitUncheckedError();
-  }
-#endif  // ROCKSDB_LITE
 }
 
 bool DBIter::SetBlobValueIfNeeded(const Slice& user_key,

@@ -56,7 +56,7 @@ struct Trace {
   // example, if bit at position 0 is set in write payload, then the write batch
   // will be addedd.
   uint64_t payload_map = 0;
-  // Each trace type has its own payload_struct, which will be serialized in the
+  // Each trace type has its own payload_struct, which will be serilized in the
   // payload.
   std::string payload;
 
@@ -132,12 +132,8 @@ class Tracer {
   // Trace Iterators.
   Status IteratorSeek(const uint32_t& cf_id, const Slice& key,
                       const Slice& lower_bound, const Slice upper_bound);
-
   Status IteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
                              const Slice& lower_bound, const Slice upper_bound);
-
-  Status IteratorNext(const uint32_t& cf_id, const Slice& key,
-                      const Slice& lower_bound, const Slice upper_bound);
 
   // Trace MultiGet
 

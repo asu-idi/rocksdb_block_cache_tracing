@@ -214,7 +214,7 @@ Status ReplayerImpl::Replay(
       if (trace_type == kTraceWrite || trace_type == kTraceGet ||
           trace_type == kTraceIteratorSeek ||
           trace_type == kTraceIteratorSeekForPrev ||
-          trace_type == kTraceIteratorNext || trace_type == kTraceMultiGet) {
+          trace_type == kTraceMultiGet) {
         std::unique_ptr<ReplayerWorkerArg> ra(new ReplayerWorkerArg);
         ra->trace_entry = std::move(trace);
         ra->handler = exec_handler_.get();

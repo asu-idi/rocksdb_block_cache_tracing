@@ -164,50 +164,6 @@ Status IteratorSeekQueryTraceRecord::Accept(
   return handler->Handle(*this, result);
 }
 
-// IteratorNextQueryTraceRecord
-IteratorNextQueryTraceRecord::IteratorNextQueryTraceRecord(
-    uint32_t column_family_id, PinnableSlice&& key, uint64_t timestamp)
-    : IteratorQueryTraceRecord(timestamp),
-      cf_id_(column_family_id),
-      key_(std::move(key)) {}
-
-IteratorNextQueryTraceRecord::IteratorNextQueryTraceRecord(
-    uint32_t column_family_id, const std::string& key, uint64_t timestamp)
-    : IteratorQueryTraceRecord(timestamp), cf_id_(column_family_id) {
-  key_.PinSelf(key);
-}
-
-IteratorNextQueryTraceRecord::IteratorNextQueryTraceRecord(
-    uint32_t column_family_id, PinnableSlice&& key, PinnableSlice&& lower_bound,
-    PinnableSlice&& upper_bound, uint64_t timestamp)
-    : IteratorQueryTraceRecord(std::move(lower_bound), std::move(upper_bound),
-                               timestamp),
-      cf_id_(column_family_id),
-      key_(std::move(key)) {}
-
-IteratorNextQueryTraceRecord::IteratorNextQueryTraceRecord(
-    uint32_t column_family_id, const std::string& key,
-    const std::string& lower_bound, const std::string& upper_bound,
-    uint64_t timestamp)
-    : IteratorQueryTraceRecord(lower_bound, upper_bound, timestamp),
-      cf_id_(column_family_id) {
-  key_.PinSelf(key);
-}
-
-IteratorNextQueryTraceRecord::~IteratorNextQueryTraceRecord() {}
-
-uint32_t IteratorNextQueryTraceRecord::GetColumnFamilyID() const {
-  return cf_id_;
-}
-
-Slice IteratorNextQueryTraceRecord::GetKey() const { return Slice(key_); }
-
-Status IteratorNextQueryTraceRecord::Accept(
-    Handler* handler, std::unique_ptr<TraceRecordResult>* result) {
-  assert(handler != nullptr);
-  return handler->Handle(*this, result);
-}
-
 // MultiGetQueryTraceRecord
 MultiGetQueryTraceRecord::MultiGetQueryTraceRecord(
     std::vector<uint32_t> column_family_ids, std::vector<PinnableSlice>&& keys,

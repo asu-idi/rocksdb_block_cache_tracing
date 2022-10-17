@@ -2006,8 +2006,6 @@ enum TraceFilterType : uint64_t {
   kTraceFilterIteratorSeekForPrev = 0x1 << 3,
   // Do not trace the `MultiGet()` operations
   kTraceFilterMultiGet = 0x1 << 4,
-  // Do not trace the `Iterator::Next()` operations
-  kTraceFilterIteratorNext = 0x1 << 5,
 };
 
 // TraceOptions is used for StartTrace
