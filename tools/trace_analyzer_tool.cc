@@ -171,18 +171,28 @@ namespace ROCKSDB_NAMESPACE {
 const size_t kShadowValueSize = 10;
 
 std::map<std::string, int> taOptToIndex = {
-    {"get", 0},           {"put", 1},
-    {"delete", 2},        {"single_delete", 3},
-    {"range_delete", 4},  {"merge", 5},
-    {"iterator_Seek", 6}, {"iterator_SeekForPrev", 7},
-    {"multiget", 8}};
+    {"get", kGet},
+    {"put", kPut},
+    {"delete", kDelete},
+    {"single_delete", kSingleDelete},
+    {"range_delete", kRangeDelete},
+    {"merge", kMerge},
+    {"iterator_Seek", kIteratorSeek},
+    {"iterator_SeekForPrev", kIteratorSeekForPrev},
+    {"multiget", kMultiGet},
+    {"iterator_Next", kIteratorNext}};
 
 std::map<int, std::string> taIndexToOpt = {
-    {0, "get"},           {1, "put"},
-    {2, "delete"},        {3, "single_delete"},
-    {4, "range_delete"},  {5, "merge"},
-    {6, "iterator_Seek"}, {7, "iterator_SeekForPrev"},
-    {8, "multiget"}};
+    {kGet, "get"},
+    {kPut, "put"},
+    {kDelete, "delete"},
+    {kSingleDelete, "single_delete"},
+    {kRangeDelete, "range_delete"},
+    {kMerge, "merge"},
+    {kIteratorSeek, "iterator_Seek"},
+    {kIteratorSeekForPrev, "iterator_SeekForPrev"},
+    {kMultiGet, "multiget"},
+    {kIteratorNext, "iterator_Next"}};
 
 namespace {
 
@@ -283,6 +293,7 @@ TraceAnalyzer::TraceAnalyzer(std::string& trace_path, std::string& output_path,
   total_writes_ = 0;
   total_seeks_ = 0;
   total_seek_prevs_ = 0;
+  total_nexts_ = 0;
   total_multigets_ = 0;
   trace_create_time_ = 0;
   begin_time_ = 0;
@@ -296,59 +307,65 @@ TraceAnalyzer::TraceAnalyzer(std::string& trace_path, std::string& output_path,
   }
 
   ta_.resize(kTaTypeNum);
-  ta_[0].type_name = "get";
+  ta_[kGet].type_name = "get";
   if (FLAGS_analyze_get) {
-    ta_[0].enabled = true;
+    ta_[kGet].enabled = true;
   } else {
-    ta_[0].enabled = false;
+    ta_[kGet].enabled = false;
   }
-  ta_[1].type_name = "put";
+  ta_[kPut].type_name = "put";
   if (FLAGS_analyze_put) {
-    ta_[1].enabled = true;
+    ta_[kPut].enabled = true;
   } else {
-    ta_[1].enabled = false;
+    ta_[kPut].enabled = false;
   }
-  ta_[2].type_name = "delete";
+  ta_[kDelete].type_name = "delete";
   if (FLAGS_analyze_delete) {
-    ta_[2].enabled = true;
+    ta_[kDelete].enabled = true;
   } else {
-    ta_[2].enabled = false;
+    ta_[kDelete].enabled = false;
   }
-  ta_[3].type_name = "single_delete";
+  ta_[kSingleDelete].type_name = "single_delete";
   if (FLAGS_analyze_single_delete) {
-    ta_[3].enabled = true;
+    ta_[kSingleDelete].enabled = true;
   } else {
-    ta_[3].enabled = false;
+    ta_[kSingleDelete].enabled = false;
   }
-  ta_[4].type_name = "range_delete";
+  ta_[kRangeDelete].type_name = "range_delete";
   if (FLAGS_analyze_range_delete) {
-    ta_[4].enabled = true;
+    ta_[kRangeDelete].enabled = true;
   } else {
-    ta_[4].enabled = false;
+    ta_[kRangeDelete].enabled = false;
   }
-  ta_[5].type_name = "merge";
+  ta_[kMerge].type_name = "merge";
   if (FLAGS_analyze_merge) {
-    ta_[5].enabled = true;
+    ta_[kMerge].enabled = true;
   } else {
-    ta_[5].enabled = false;
+    ta_[kMerge].enabled = false;
   }
-  ta_[6].type_name = "iterator_Seek";
+  ta_[kIteratorSeek].type_name = "iterator_Seek";
   if (FLAGS_analyze_iterator) {
-    ta_[6].enabled = true;
+    ta_[kIteratorSeek].enabled = true;
   } else {
-    ta_[6].enabled = false;
+    ta_[kIteratorSeek].enabled = false;
   }
-  ta_[7].type_name = "iterator_SeekForPrev";
+  ta_[kIteratorSeekForPrev].type_name = "iterator_SeekForPrev";
   if (FLAGS_analyze_iterator) {
-    ta_[7].enabled = true;
+    ta_[kIteratorSeekForPrev].enabled = true;
   } else {
-    ta_[7].enabled = false;
+    ta_[kIteratorSeekForPrev].enabled = false;
   }
-  ta_[8].type_name = "multiget";
+  ta_[kMultiGet].type_name = "multiget";
   if (FLAGS_analyze_multiget) {
-    ta_[8].enabled = true;
+    ta_[kMultiGet].enabled = true;
   } else {
-    ta_[8].enabled = false;
+    ta_[kMultiGet].enabled = false;
+  }
+  ta_[kIteratorNext].type_name = "iterator_Next";
+  if (FLAGS_analyze_iterator) {
+    ta_[kIteratorNext].enabled = true;
+  } else {
+    ta_[kIteratorNext].enabled = false;
   }
   for (int i = 0; i < kTaTypeNum; i++) {
     ta_[i].sample_count = 0;
@@ -1548,6 +1565,17 @@ Status TraceAnalyzer::Handle(const IteratorSeekQueryTraceRecord& record,
                               std::move(record.GetKey()), 0);
 }
 
+Status TraceAnalyzer::Handle(const IteratorNextQueryTraceRecord& record,
+                             std::unique_ptr<TraceRecordResult>* /*result*/) {
+  total_nexts_++;
+
+  // To do: shall we add lower/upper bounds?
+
+  return OutputAnalysisResult(TraceOperationType::kIteratorNext,
+                              record.GetTimestamp(), record.GetColumnFamilyID(),
+                              std::move(record.GetKey()), 0);
+}
+
 Status TraceAnalyzer::Handle(const MultiGetQueryTraceRecord& record,
                              std::unique_ptr<TraceRecordResult>* /*result*/) {
   total_multigets_++;
@@ -1824,9 +1852,9 @@ void TraceAnalyzer::PrintStatistics() {
     printf("Total_requests: %" PRIu64 " Total_accessed_keys: %" PRIu64
            " Total_gets: %" PRIu64 " Total_write_batches: %" PRIu64
            " Total_seeks: %" PRIu64 " Total_seek_for_prevs: %" PRIu64
-           " Total_multigets: %" PRIu64 "\n",
+           " Total_nexts: %" PRIu64 " Total_multigets: %" PRIu64 "\n",
            total_requests_, total_access_keys_, total_gets_, total_writes_,
-           total_seeks_, total_seek_prevs_, total_multigets_);
+           total_seeks_, total_seek_prevs_, total_nexts_, total_multigets_);
     for (int type = 0; type < kTaTypeNum; type++) {
       if (!ta_[type].enabled) {
         continue;

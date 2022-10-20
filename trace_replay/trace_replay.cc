@@ -213,7 +213,9 @@ Status TracerHelper::DecodeTraceRecord(Trace* trace, int trace_file_version,
     }
     // Iterator Seek and SeekForPrev
     case kTraceIteratorSeek:
-    case kTraceIteratorSeekForPrev: {
+    case kTraceIteratorSeekForPrev:
+    // TODO kTraceIteratorNext
+    case kTraceIteratorNext: {
       uint32_t cf_id = 0;
       Slice iter_key;
       Slice lower_bound;
@@ -262,10 +264,16 @@ Status TracerHelper::DecodeTraceRecord(Trace* trace, int trace_file_version,
         ps_lower.PinSelf(lower_bound);
         PinnableSlice ps_upper;
         ps_upper.PinSelf(upper_bound);
-        record->reset(new IteratorSeekQueryTraceRecord(
-            static_cast<IteratorSeekQueryTraceRecord::SeekType>(trace->type),
-            cf_id, std::move(ps_key), std::move(ps_lower), std::move(ps_upper),
-            trace->ts));
+        if (trace->type == kTraceIteratorNext) {
+          record->reset(new IteratorNextQueryTraceRecord(
+              cf_id, std::move(ps_key), std::move(ps_lower),
+              std::move(ps_upper), trace->ts));
+        } else {
+          record->reset(new IteratorSeekQueryTraceRecord(
+              static_cast<IteratorSeekQueryTraceRecord::SeekType>(trace->type),
+              cf_id, std::move(ps_key), std::move(ps_lower),
+              std::move(ps_upper), trace->ts));
+        }
       }
 
       return Status::OK();
@@ -457,6 +465,41 @@ Status Tracer::IteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
   return WriteTrace(trace);
 }
 
+Status Tracer::IteratorNext(const uint32_t& cf_id, const Slice& key,
+                            const Slice& lower_bound, const Slice upper_bound) {
+  TraceType trace_type = kTraceIteratorNext;
+  if (ShouldSkipTrace(trace_type)) {
+    return Status::OK();
+  }
+  Trace trace;
+  trace.ts = clock_->NowMicros();
+  trace.type = trace_type;
+  // Set the payloadmap of the struct member that will be encoded in the
+  // payload.
+  TracerHelper::SetPayloadMap(trace.payload_map, TracePayloadType::kIterCFID);
+  TracerHelper::SetPayloadMap(trace.payload_map, TracePayloadType::kIterKey);
+  if (lower_bound.size() > 0) {
+    TracerHelper::SetPayloadMap(trace.payload_map,
+                                TracePayloadType::kIterLowerBound);
+  }
+  if (upper_bound.size() > 0) {
+    TracerHelper::SetPayloadMap(trace.payload_map,
+                                TracePayloadType::kIterUpperBound);
+  }
+  // Encode the Iterator struct members into payload. Make sure add them in
+  // order.
+  PutFixed64(&trace.payload, trace.payload_map);
+  PutFixed32(&trace.payload, cf_id);
+  PutLengthPrefixedSlice(&trace.payload, key);
+  if (lower_bound.size() > 0) {
+    PutLengthPrefixedSlice(&trace.payload, lower_bound);
+  }
+  if (upper_bound.size() > 0) {
+    PutLengthPrefixedSlice(&trace.payload, upper_bound);
+  }
+  return WriteTrace(trace);
+}
+
 Status Tracer::MultiGet(const size_t num_keys,
                         ColumnFamilyHandle** column_families,
                         const Slice* keys) {
@@ -551,6 +594,9 @@ bool Tracer::ShouldSkipTrace(const TraceType& trace_type) {
       break;
     case kTraceIteratorSeekForPrev:
       filter_mask = kTraceFilterIteratorSeekForPrev;
+      break;
+    case kTraceIteratorNext:
+      filter_mask = kTraceFilterIteratorNext;
       break;
     case kBlockTraceIndexBlock:
     case kBlockTraceFilterBlock:
