@@ -457,6 +457,26 @@ Status Tracer::IteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
   return WriteTrace(trace);
 }
 
+Status Tracer::IteratorNext(const uint64_t& trace_iter_uid) {
+  TraceType trace_type = kTraceIteratorNext;
+  if (ShouldSkipTrace(trace_type)) {
+    return Status::OK();
+  }
+  Trace trace;
+  trace.ts = clock_->NowMicros();
+  trace.type = trace_type;
+  // Set the payloadmap of the struct member that will be encoded in the
+  // payload.
+  TracerHelper::SetPayloadMap(trace.payload_map, TracePayloadType::kIterCFID);
+  TracerHelper::SetPayloadMap(trace.payload_map, TracePayloadType::kIterKey);
+
+  // Encode the Iterator struct members into payload. Make sure add them in
+  // order.
+  PutFixed64(&trace.payload, trace.payload_map);
+  PutFixed64(&trace.payload, trace_iter_uid);
+  return WriteTrace(trace);
+}
+
 Status Tracer::MultiGet(const size_t num_keys,
                         ColumnFamilyHandle** column_families,
                         const Slice* keys) {
@@ -551,6 +571,9 @@ bool Tracer::ShouldSkipTrace(const TraceType& trace_type) {
       break;
     case kTraceIteratorSeekForPrev:
       filter_mask = kTraceFilterIteratorSeekForPrev;
+      break;
+    case kTraceIteratorNext:
+      filter_mask = kTraceFilterIteratorNext;
       break;
     case kBlockTraceIndexBlock:
     case kBlockTraceFilterBlock:

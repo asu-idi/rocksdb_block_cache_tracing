@@ -135,6 +135,8 @@ class Tracer {
   Status IteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
                              const Slice& lower_bound, const Slice upper_bound);
 
+  Status IteratorNext(const uint64_t& trace_iter_uid);
+
   // Trace MultiGet
 
   Status MultiGet(const size_t num_keys, ColumnFamilyHandle** column_families,

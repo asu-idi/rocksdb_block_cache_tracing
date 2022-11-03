@@ -5899,6 +5899,17 @@ Status DBImpl::TraceIteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
   return s;
 }
 
+Status DBImpl::TraceIteratorNext(const uint64_t& trace_iter_uid) {
+  Status s;
+  if (tracer_) {
+    InstrumentedMutexLock lock(&trace_mutex_);
+    if (tracer_) {
+      s = tracer_->IteratorNext(trace_iter_uid);
+    }
+  }
+  return s;
+}
+
 Status DBImpl::ReserveFileNumbersBeforeIngestion(
     ColumnFamilyData* cfd, uint64_t num,
     std::unique_ptr<std::list<uint64_t>::iterator>& pending_output_elem,
