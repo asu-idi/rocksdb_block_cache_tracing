@@ -214,7 +214,7 @@ Status TracerHelper::DecodeTraceRecord(Trace* trace, int trace_file_version,
     // Iterator Next
     case kTraceIteratorNext: {
       // Bypass it now
-      break;
+      return Status::OK();
     }
 
     // Iterator Seek and SeekForPrev
