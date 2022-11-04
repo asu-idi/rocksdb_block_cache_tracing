@@ -52,6 +52,12 @@ Status TraceExecutionHandler::Handle(
 }
 
 Status TraceExecutionHandler::Handle(
+    const IteratorNextQueryTraceRecord& record,
+    std::unique_ptr<TraceRecordResult>* result) {
+  return Status::OK();
+}
+
+Status TraceExecutionHandler::Handle(
     const GetQueryTraceRecord& record,
     std::unique_ptr<TraceRecordResult>* result) {
   if (result != nullptr) {

@@ -32,6 +32,8 @@ class TraceExecutionHandler : public TraceRecord::Handler {
                         std::unique_ptr<TraceRecordResult>* result) override;
   virtual Status Handle(const MultiGetQueryTraceRecord& record,
                         std::unique_ptr<TraceRecordResult>* result) override;
+  virtual Status Handle(const IteratorNextQueryTraceRecord& record,
+                        std::unique_ptr<TraceRecordResult>* result) override;
 
  private:
   DB* db_;

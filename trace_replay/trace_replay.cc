@@ -213,7 +213,12 @@ Status TracerHelper::DecodeTraceRecord(Trace* trace, int trace_file_version,
     }
     // Iterator Next
     case kTraceIteratorNext: {
-      // Bypass it now
+      uint64_t iter_uid;
+      Slice buf(trace->payload);
+      GetFixed64(&buf, &iter_uid);
+      if (record != nullptr) {
+        record->reset(new IteratorNextQueryTraceRecord(iter_uid, trace->ts));
+      }
       return Status::OK();
     }
 
@@ -471,14 +476,6 @@ Status Tracer::IteratorNext(const uint64_t& trace_iter_uid) {
   Trace trace;
   trace.ts = clock_->NowMicros();
   trace.type = trace_type;
-  // Set the payloadmap of the struct member that will be encoded in the
-  // payload.
-  TracerHelper::SetPayloadMap(trace.payload_map, TracePayloadType::kIterCFID);
-  TracerHelper::SetPayloadMap(trace.payload_map, TracePayloadType::kIterKey);
-
-  // Encode the Iterator struct members into payload. Make sure add them in
-  // order.
-  PutFixed64(&trace.payload, trace.payload_map);
   PutFixed64(&trace.payload, trace_iter_uid);
   return WriteTrace(trace);
 }
