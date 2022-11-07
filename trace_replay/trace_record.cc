@@ -103,6 +103,21 @@ Slice IteratorQueryTraceRecord::GetLowerBound() const { return Slice(lower_); }
 
 Slice IteratorQueryTraceRecord::GetUpperBound() const { return Slice(upper_); }
 
+IteratorNextQueryTraceRecord::IteratorNextQueryTraceRecord(
+    uint64_t trace_iter_uid, uint64_t timestamp)
+    : QueryTraceRecord(timestamp), trace_iter_uid_(trace_iter_uid) {}
+
+IteratorNextQueryTraceRecord::~IteratorNextQueryTraceRecord() = default;
+
+uint64_t IteratorNextQueryTraceRecord::GetTraceIterUid() const {
+  return trace_iter_uid_;
+}
+Status IteratorNextQueryTraceRecord::Accept(
+    Handler* handler, std::unique_ptr<TraceRecordResult>* result) {
+  assert(handler != nullptr);
+  return handler->Handle(*this, result);
+}
+
 // IteratorSeekQueryTraceRecord
 IteratorSeekQueryTraceRecord::IteratorSeekQueryTraceRecord(
     SeekType seek_type, uint32_t column_family_id, PinnableSlice&& key,

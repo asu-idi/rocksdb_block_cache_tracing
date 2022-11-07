@@ -211,6 +211,17 @@ Status TracerHelper::DecodeTraceRecord(Trace* trace, int trace_file_version,
 
       return Status::OK();
     }
+    // Iterator Next
+    case kTraceIteratorNext: {
+      uint64_t iter_uid;
+      Slice buf(trace->payload);
+      GetFixed64(&buf, &iter_uid);
+      if (record != nullptr) {
+        record->reset(new IteratorNextQueryTraceRecord(iter_uid, trace->ts));
+      }
+      return Status::OK();
+    }
+
     // Iterator Seek and SeekForPrev
     case kTraceIteratorSeek:
     case kTraceIteratorSeekForPrev: {
@@ -457,6 +468,18 @@ Status Tracer::IteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
   return WriteTrace(trace);
 }
 
+Status Tracer::IteratorNext(const uint64_t& trace_iter_uid) {
+  TraceType trace_type = kTraceIteratorNext;
+  if (ShouldSkipTrace(trace_type)) {
+    return Status::OK();
+  }
+  Trace trace;
+  trace.ts = clock_->NowMicros();
+  trace.type = trace_type;
+  PutFixed64(&trace.payload, trace_iter_uid);
+  return WriteTrace(trace);
+}
+
 Status Tracer::MultiGet(const size_t num_keys,
                         ColumnFamilyHandle** column_families,
                         const Slice* keys) {
@@ -551,6 +574,9 @@ bool Tracer::ShouldSkipTrace(const TraceType& trace_type) {
       break;
     case kTraceIteratorSeekForPrev:
       filter_mask = kTraceFilterIteratorSeekForPrev;
+      break;
+    case kTraceIteratorNext:
+      filter_mask = kTraceFilterIteratorNext;
       break;
     case kBlockTraceIndexBlock:
     case kBlockTraceFilterBlock:

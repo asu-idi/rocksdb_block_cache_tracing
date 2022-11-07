@@ -247,6 +247,9 @@ class DBIter final : public Iterator {
   bool IsVisible(SequenceNumber sequence, const Slice& ts,
                  bool* more_recent = nullptr);
 
+  // Rest the trace_iter_uid_ for a new one
+  void ResetIterUid();
+
   // Temporarily pin the blocks that we encounter until ReleaseTempPinnedData()
   // is called
   void TempPinData() {
@@ -394,6 +397,7 @@ class DBIter final : public Iterator {
   ROCKSDB_FIELD_UNUSED
 #endif
   ColumnFamilyData* cfd_;
+  uint64_t trace_iter_uid_;
   const Slice* const timestamp_ub_;
   const Slice* const timestamp_lb_;
   const size_t timestamp_size_;

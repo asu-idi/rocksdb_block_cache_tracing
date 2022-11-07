@@ -40,6 +40,7 @@ enum TraceType : char {
   // Query level tracing related trace type.
   kTraceMultiGet = 13,
   // All trace types should be added before kTraceMax
+  kTraceIteratorNext = 14,
   kTraceMax,
 };
 
@@ -48,6 +49,7 @@ class IteratorSeekQueryTraceRecord;
 class MultiGetQueryTraceRecord;
 class TraceRecordResult;
 class WriteQueryTraceRecord;
+class IteratorNextQueryTraceRecord;
 
 // Base class for all types of trace records.
 class TraceRecord {
@@ -76,6 +78,9 @@ class TraceRecord {
                           std::unique_ptr<TraceRecordResult>* result) = 0;
 
     virtual Status Handle(const MultiGetQueryTraceRecord& record,
+                          std::unique_ptr<TraceRecordResult>* result) = 0;
+
+    virtual Status Handle(const IteratorNextQueryTraceRecord& record,
                           std::unique_ptr<TraceRecordResult>* result) = 0;
   };
 
@@ -166,6 +171,23 @@ class IteratorQueryTraceRecord : public QueryTraceRecord {
  private:
   PinnableSlice lower_;
   PinnableSlice upper_;
+};
+
+class IteratorNextQueryTraceRecord : public QueryTraceRecord {
+ public:
+  IteratorNextQueryTraceRecord(uint64_t trace_iter_uid, uint64_t timestamp);
+
+  virtual ~IteratorNextQueryTraceRecord() override;
+
+  virtual uint64_t GetTraceIterUid() const;
+
+  TraceType GetTraceType() const override { return kTraceIteratorNext; }
+
+  Status Accept(Handler* handler,
+                std::unique_ptr<TraceRecordResult>* result) override;
+
+ private:
+  uint64_t trace_iter_uid_;
 };
 
 // Trace record for Iterator::Seek() and Iterator::SeekForPrev() operation.

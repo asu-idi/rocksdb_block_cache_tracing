@@ -303,6 +303,7 @@ Status FileExpectedStateManager::SaveAtAndAfter(DB* db) {
     trace_opts.filter |= kTraceFilterMultiGet;
     trace_opts.filter |= kTraceFilterIteratorSeek;
     trace_opts.filter |= kTraceFilterIteratorSeekForPrev;
+    trace_opts.filter |= kTraceFilterIteratorNext;
     trace_opts.preserve_write_order = true;
     s = db->StartTrace(trace_opts, std::move(trace_writer));
   }
@@ -376,6 +377,12 @@ class ExpectedStateTraceRecordHandler : public TraceRecord::Handler,
 
   // Ignore reads.
   Status Handle(const MultiGetQueryTraceRecord& /* record */,
+                std::unique_ptr<TraceRecordResult>* /* result */) override {
+    return Status::OK();
+  }
+
+  // Ignore reads.
+  Status Handle(const IteratorNextQueryTraceRecord& /* record */,
                 std::unique_ptr<TraceRecordResult>* /* result */) override {
     return Status::OK();
   }

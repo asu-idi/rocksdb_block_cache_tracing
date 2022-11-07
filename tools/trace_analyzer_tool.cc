@@ -1575,6 +1575,16 @@ Status TraceAnalyzer::Handle(const MultiGetQueryTraceRecord& record,
                               std::move(keys), std::move(value_sizes));
 }
 
+Status TraceAnalyzer::Handle(const IteratorNextQueryTraceRecord& record,
+                             std::unique_ptr<TraceRecordResult>* /*result*/) {
+  total_nexts_++;
+
+  uint64_t trace_iter_uid = record.GetTraceIterUid();
+
+  return OutputAnalysisResult(TraceOperationType::kIteratorNext,
+                              record.GetTimestamp(), trace_iter_uid);
+}
+
 // Handle the Put request in the write batch of the trace
 Status TraceAnalyzer::PutCF(uint32_t column_family_id, const Slice& key,
                             const Slice& value) {
@@ -1669,6 +1679,16 @@ Status TraceAnalyzer::OutputAnalysisResult(TraceOperationType op_type,
   return OutputAnalysisResult(
       op_type, timestamp, std::vector<uint32_t>({cf_id}),
       std::vector<Slice>({key}), std::vector<size_t>({value_size}));
+}
+
+Status TraceAnalyzer::OutputAnalysisResult(TraceOperationType op_type,
+                                           uint64_t timestamp,
+                                           uint64_t trace_iter_uid) {
+  auto s = WriteTraceSequence(op_type, trace_iter_uid, timestamp);
+  if (!s.ok()) {
+    return Status::Corruption("Failed to process iterator next tracer");
+  }
+  return s;
 }
 
 // Before the analyzer is closed, the requested general statistic results are
@@ -1824,9 +1844,9 @@ void TraceAnalyzer::PrintStatistics() {
     printf("Total_requests: %" PRIu64 " Total_accessed_keys: %" PRIu64
            " Total_gets: %" PRIu64 " Total_write_batches: %" PRIu64
            " Total_seeks: %" PRIu64 " Total_seek_for_prevs: %" PRIu64
-           " Total_multigets: %" PRIu64 "\n",
+           " Total_multigets: %" PRIu64 " Total_nexts: %" PRIu64 "\n",
            total_requests_, total_access_keys_, total_gets_, total_writes_,
-           total_seeks_, total_seek_prevs_, total_multigets_);
+           total_seeks_, total_seek_prevs_, total_multigets_, total_nexts_);
     for (int type = 0; type < kTaTypeNum; type++) {
       if (!ta_[type].enabled) {
         continue;
@@ -1855,6 +1875,20 @@ Status TraceAnalyzer::WriteTraceSequence(const uint32_t& type,
   if (!FLAGS_no_key) {
     printout = hex_key + " " + printout;
   }
+  return trace_sequence_f_->Append(printout);
+}
+
+// Write the trace sequence to file
+Status TraceAnalyzer::WriteTraceSequence(const uint32_t& type,
+                                         const uint64_t trace_iter_uid,
+                                         const uint64_t ts) {
+  int ret;
+  ret = snprintf(buffer_, sizeof(buffer_), "%u %" PRIu64 " %" PRIu64 "\n", type,
+                 trace_iter_uid, ts);
+  if (ret < 0) {
+    return Status::IOError("failed to format the output");
+  }
+  std::string printout(buffer_);
   return trace_sequence_f_->Append(printout);
 }
 

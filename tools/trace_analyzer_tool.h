@@ -35,7 +35,8 @@ enum TraceOperationType : int {
   kIteratorSeek = 6,
   kIteratorSeekForPrev = 7,
   kMultiGet = 8,
-  kTaTypeNum = 9
+  kIteratorNext = 9,
+  kTaTypeNum = 10
 };
 
 struct TraceUnit {
@@ -196,6 +197,8 @@ class TraceAnalyzer : private TraceRecord::Handler,
                 std::unique_ptr<TraceRecordResult>* result) override;
   Status Handle(const MultiGetQueryTraceRecord& record,
                 std::unique_ptr<TraceRecordResult>* result) override;
+  Status Handle(const IteratorNextQueryTraceRecord& record,
+                std::unique_ptr<TraceRecordResult>* result) override;
 
   using WriteBatch::Handler::PutCF;
   Status PutCF(uint32_t column_family_id, const Slice& key,
@@ -259,6 +262,9 @@ class TraceAnalyzer : private TraceRecord::Handler,
                               uint32_t cf_id, const Slice& key,
                               size_t value_size);
 
+  Status OutputAnalysisResult(TraceOperationType op_type, uint64_t timestamp,
+                              uint64_t trace_iter_uid);
+
   ROCKSDB_NAMESPACE::Env* env_;
   EnvOptions env_options_;
   std::unique_ptr<TraceReader> trace_reader_;
@@ -276,6 +282,7 @@ class TraceAnalyzer : private TraceRecord::Handler,
   uint64_t total_seeks_;
   uint64_t total_seek_prevs_;
   uint64_t total_multigets_;
+  uint64_t total_nexts_;
   uint64_t trace_create_time_;
   uint64_t begin_time_;
   uint64_t end_time_;
@@ -312,6 +319,8 @@ class TraceAnalyzer : private TraceRecord::Handler,
       std::unique_ptr<ROCKSDB_NAMESPACE::WritableFile>& f_ptr, TraceUnit& unit);
   Status WriteTraceSequence(const uint32_t& type, const uint32_t& cf_id,
                             const Slice& key, const size_t value_size,
+                            const uint64_t ts);
+  Status WriteTraceSequence(const uint32_t& type, const uint64_t trace_iter_uid,
                             const uint64_t ts);
   Status MakeStatisticKeyStatsOrPrefix(TraceStats& stats);
   Status MakeStatisticCorrelation(TraceStats& stats, StatsUnit& unit);
