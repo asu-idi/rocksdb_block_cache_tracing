@@ -1844,9 +1844,9 @@ void TraceAnalyzer::PrintStatistics() {
     printf("Total_requests: %" PRIu64 " Total_accessed_keys: %" PRIu64
            " Total_gets: %" PRIu64 " Total_write_batches: %" PRIu64
            " Total_seeks: %" PRIu64 " Total_seek_for_prevs: %" PRIu64
-           " Total_multigets: %" PRIu64 "\n",
+           " Total_multigets: %" PRIu64 " Total_nexts: %" PRIu64 "\n",
            total_requests_, total_access_keys_, total_gets_, total_writes_,
-           total_seeks_, total_seek_prevs_, total_multigets_);
+           total_seeks_, total_seek_prevs_, total_multigets_, total_nexts_);
     for (int type = 0; type < kTaTypeNum; type++) {
       if (!ta_[type].enabled) {
         continue;

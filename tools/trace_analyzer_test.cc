@@ -61,11 +61,11 @@ class TraceAnalyzerTest : public testing::Test {
     Options options;
     options.create_if_missing = true;
     options.merge_operator = MergeOperators::CreatePutOperator();
-    Slice upper_bound("a");
-    Slice lower_bound("abce");
+    //    Slice upper_bound("a");
+    //    Slice lower_bound("abce");
     ReadOptions ro;
-    ro.iterate_upper_bound = &upper_bound;
-    ro.iterate_lower_bound = &lower_bound;
+    //    ro.iterate_upper_bound = &upper_bound;
+    //    ro.iterate_lower_bound = &lower_bound;
     WriteOptions wo;
     TraceOptions trace_opt;
     DB* db_ = nullptr;
@@ -109,6 +109,8 @@ class TraceAnalyzerTest : public testing::Test {
     single_iter->Seek("a");
     ASSERT_OK(single_iter->status());
     single_iter->SeekForPrev("b");
+    ASSERT_OK(single_iter->status());
+    single_iter->Next();
     ASSERT_OK(single_iter->status());
     delete single_iter;
     std::this_thread::sleep_for(std::chrono::seconds(1));
