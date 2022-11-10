@@ -1579,10 +1579,10 @@ Status TraceAnalyzer::Handle(const IteratorNextQueryTraceRecord& record,
                              std::unique_ptr<TraceRecordResult>* /*result*/) {
   total_nexts_++;
 
-  uint64_t trace_iter_uid = record.GetTraceIterUid();
+  uint64_t tracing_iter_id = record.GetTraceIterId();
 
   return OutputAnalysisResult(TraceOperationType::kIteratorNext,
-                              record.GetTimestamp(), trace_iter_uid);
+                              record.GetTimestamp(), tracing_iter_id);
 }
 
 // Handle the Put request in the write batch of the trace
@@ -1683,8 +1683,8 @@ Status TraceAnalyzer::OutputAnalysisResult(TraceOperationType op_type,
 
 Status TraceAnalyzer::OutputAnalysisResult(TraceOperationType op_type,
                                            uint64_t timestamp,
-                                           uint64_t trace_iter_uid) {
-  auto s = WriteTraceSequence(op_type, trace_iter_uid, timestamp);
+                                           uint64_t tracing_iter_id) {
+  auto s = WriteTraceSequence(op_type, tracing_iter_id, timestamp);
   if (!s.ok()) {
     return Status::Corruption("Failed to process iterator next tracer");
   }
@@ -1880,11 +1880,11 @@ Status TraceAnalyzer::WriteTraceSequence(const uint32_t& type,
 
 // Write the trace sequence to file
 Status TraceAnalyzer::WriteTraceSequence(const uint32_t& type,
-                                         const uint64_t trace_iter_uid,
+                                         const uint64_t tracing_iter_id,
                                          const uint64_t ts) {
   int ret;
   ret = snprintf(buffer_, sizeof(buffer_), "%u %" PRIu64 " %" PRIu64 "\n", type,
-                 trace_iter_uid, ts);
+                 tracing_iter_id, ts);
   if (ret < 0) {
     return Status::IOError("failed to format the output");
   }

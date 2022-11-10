@@ -79,7 +79,7 @@ DBIter::DBIter(Env* _env, const ReadOptions& read_options,
       arena_mode_(arena_mode),
       db_impl_(db_impl),
       cfd_(cfd),
-      trace_iter_uid_(0),
+      tracing_iter_id_(0),
       timestamp_ub_(read_options.timestamp),
       timestamp_lb_(read_options.iter_start_ts),
       timestamp_size_(timestamp_ub_ ? timestamp_ub_->size() : 0) {
@@ -135,8 +135,8 @@ void DBIter::Next() {
 #ifndef ROCKSDB_LITE
   if (db_impl_ != nullptr && cfd_ != nullptr) {
     // TODO: What do we do if this returns an error?
-    ResetIterUid();
-    db_impl_->TraceIteratorNext(trace_iter_uid_).PermitUncheckedError();
+    ResetIterId();
+    db_impl_->TraceIteratorNext(tracing_iter_id_).PermitUncheckedError();
   }
 #endif  // ROCKSDB_LITE
 
@@ -1362,9 +1362,9 @@ bool DBIter::IsVisible(SequenceNumber sequence, const Slice& ts,
   return visible_by_seq && visible_by_ts;
 }
 
-void DBIter::ResetIterUid() {
-  trace_iter_uid_ = env_->NowMicros();
-  trace_iter_uid_ += reinterpret_cast<uintptr_t>(iter_.iter());
+void DBIter::ResetIterId() {
+  tracing_iter_id_ = env_->NowMicros();
+  tracing_iter_id_ += reinterpret_cast<uintptr_t>(iter_.iter());
 }
 
 void DBIter::SetSavedKeyToSeekTarget(const Slice& target) {

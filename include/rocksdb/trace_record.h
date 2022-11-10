@@ -175,11 +175,11 @@ class IteratorQueryTraceRecord : public QueryTraceRecord {
 
 class IteratorNextQueryTraceRecord : public QueryTraceRecord {
  public:
-  IteratorNextQueryTraceRecord(uint64_t trace_iter_uid, uint64_t timestamp);
+  IteratorNextQueryTraceRecord(uint64_t tracing_iter_id, uint64_t timestamp);
 
   virtual ~IteratorNextQueryTraceRecord() override;
 
-  virtual uint64_t GetTraceIterUid() const;
+  virtual uint64_t GetTraceIterId() const;
 
   TraceType GetTraceType() const override { return kTraceIteratorNext; }
 
@@ -187,7 +187,7 @@ class IteratorNextQueryTraceRecord : public QueryTraceRecord {
                 std::unique_ptr<TraceRecordResult>* result) override;
 
  private:
-  uint64_t trace_iter_uid_;
+  uint64_t tracing_iter_id_;
 };
 
 // Trace record for Iterator::Seek() and Iterator::SeekForPrev() operation.

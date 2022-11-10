@@ -717,7 +717,7 @@ class DBImpl : public DB {
                                   const Slice& lower_bound,
                                   const Slice upper_bound);
 
-  Status TraceIteratorNext(const uint64_t& trace_iter_uid);
+  Status TraceIteratorNext(const uint64_t& tracing_iter_id);
 #endif  // ROCKSDB_LITE
 
   // Similar to GetSnapshot(), but also lets the db know that this snapshot

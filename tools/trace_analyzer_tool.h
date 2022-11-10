@@ -263,7 +263,7 @@ class TraceAnalyzer : private TraceRecord::Handler,
                               size_t value_size);
 
   Status OutputAnalysisResult(TraceOperationType op_type, uint64_t timestamp,
-                              uint64_t trace_iter_uid);
+                              uint64_t tracing_iter_id);
 
   ROCKSDB_NAMESPACE::Env* env_;
   EnvOptions env_options_;
@@ -320,8 +320,8 @@ class TraceAnalyzer : private TraceRecord::Handler,
   Status WriteTraceSequence(const uint32_t& type, const uint32_t& cf_id,
                             const Slice& key, const size_t value_size,
                             const uint64_t ts);
-  Status WriteTraceSequence(const uint32_t& type, const uint64_t trace_iter_uid,
-                            const uint64_t ts);
+  Status WriteTraceSequence(const uint32_t& type,
+                            const uint64_t tracing_iter_id, const uint64_t ts);
   Status MakeStatisticKeyStatsOrPrefix(TraceStats& stats);
   Status MakeStatisticCorrelation(TraceStats& stats, StatsUnit& unit);
   Status MakeStatisticQPS();

@@ -104,13 +104,13 @@ Slice IteratorQueryTraceRecord::GetLowerBound() const { return Slice(lower_); }
 Slice IteratorQueryTraceRecord::GetUpperBound() const { return Slice(upper_); }
 
 IteratorNextQueryTraceRecord::IteratorNextQueryTraceRecord(
-    uint64_t trace_iter_uid, uint64_t timestamp)
-    : QueryTraceRecord(timestamp), trace_iter_uid_(trace_iter_uid) {}
+    uint64_t tracing_iter_id, uint64_t timestamp)
+    : QueryTraceRecord(timestamp), tracing_iter_id_(tracing_iter_id) {}
 
 IteratorNextQueryTraceRecord::~IteratorNextQueryTraceRecord() = default;
 
-uint64_t IteratorNextQueryTraceRecord::GetTraceIterUid() const {
-  return trace_iter_uid_;
+uint64_t IteratorNextQueryTraceRecord::GetTraceIterId() const {
+  return tracing_iter_id_;
 }
 Status IteratorNextQueryTraceRecord::Accept(
     Handler* handler, std::unique_ptr<TraceRecordResult>* result) {

@@ -132,6 +132,9 @@ Status BlockCacheTraceWriterImpl::WriteBlockAccess(
     trace.payload.push_back(record.get_from_user_specified_snapshot);
     PutLengthPrefixedSlice(&trace.payload, referenced_key);
   }
+  if (record.caller == kUserIterator) {
+    PutFixed64(&trace.payload, record.iter_id);
+  }
   if (BlockCacheTraceHelper::IsGetOrMultiGetOnDataBlock(record.block_type,
                                                         record.caller)) {
     PutFixed64(&trace.payload, record.referenced_data_size);
@@ -284,6 +287,12 @@ Status BlockCacheTraceReader::ReadAccess(BlockCacheTraceRecord* record) {
     }
     record->referenced_key = referenced_key.ToString();
   }
+  if (record->caller == TableReaderCaller::kUserIterator) {
+    if (!GetFixed64(&enc_slice, &record->iter_id)) {
+      return Status::Incomplete(
+          "Incomplete access record: Failed to read the iter id.");
+    }
+  }
   if (BlockCacheTraceHelper::IsGetOrMultiGetOnDataBlock(record->block_type,
                                                         record->caller)) {
     if (!GetFixed64(&enc_slice, &record->referenced_data_size)) {
@@ -333,7 +342,8 @@ Status BlockCacheHumanReadableTraceWriter::WriteHumanReadableTraceRecord(
       trace_record_buffer_, sizeof(trace_record_buffer_),
       "%" PRIu64 ",%" PRIu64 ",%u,%" PRIu64 ",%" PRIu64 ",%s,%" PRIu32
       ",%" PRIu64 ",%u,%u,%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%u,%u,%" PRIu64
-      ",%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n",
+      ",%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64 ",%" PRIu64
+      "\n",
       access.access_timestamp, block_id, access.block_type, access.block_size,
       access.cf_id, access.cf_name.c_str(), access.level, access.sst_fd_number,
       access.caller, access.no_insert, access.get_id, get_key_id,
@@ -343,7 +353,7 @@ Status BlockCacheHumanReadableTraceWriter::WriteHumanReadableTraceRecord(
       BlockCacheTraceHelper::GetSequenceNumber(access),
       static_cast<uint64_t>(access.block_key.size()),
       static_cast<uint64_t>(access.referenced_key.size()),
-      BlockCacheTraceHelper::GetBlockOffsetInFile(access));
+      BlockCacheTraceHelper::GetBlockOffsetInFile(access), access.iter_id);
   if (ret < 0) {
     return Status::IOError("failed to format the output");
   }
@@ -379,7 +389,7 @@ Status BlockCacheHumanReadableTraceReader::ReadAccess(
     getline(ss, substr, ',');
     record_strs.push_back(substr);
   }
-  if (record_strs.size() != 21) {
+  if (record_strs.size() != 22) {
     return Status::Incomplete("Records format is wrong.");
   }
 
@@ -417,6 +427,7 @@ Status BlockCacheHumanReadableTraceReader::ReadAccess(
   uint64_t block_key_size = ParseUint64(record_strs[18]);
   uint64_t get_key_size = ParseUint64(record_strs[19]);
   uint64_t block_offset = ParseUint64(record_strs[20]);
+  uint64_t iter_id = ParseUint64(record_strs[21]);
 
   std::string tmp_block_key;
   PutVarint64(&tmp_block_key, block_key);

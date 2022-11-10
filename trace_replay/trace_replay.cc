@@ -213,11 +213,11 @@ Status TracerHelper::DecodeTraceRecord(Trace* trace, int trace_file_version,
     }
     // Iterator Next
     case kTraceIteratorNext: {
-      uint64_t iter_uid;
+      uint64_t iter_id;
       Slice buf(trace->payload);
-      GetFixed64(&buf, &iter_uid);
+      GetFixed64(&buf, &iter_id);
       if (record != nullptr) {
-        record->reset(new IteratorNextQueryTraceRecord(iter_uid, trace->ts));
+        record->reset(new IteratorNextQueryTraceRecord(iter_id, trace->ts));
       }
       return Status::OK();
     }
@@ -468,7 +468,7 @@ Status Tracer::IteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
   return WriteTrace(trace);
 }
 
-Status Tracer::IteratorNext(const uint64_t& trace_iter_uid) {
+Status Tracer::IteratorNext(const uint64_t& tracing_iter_id) {
   TraceType trace_type = kTraceIteratorNext;
   if (ShouldSkipTrace(trace_type)) {
     return Status::OK();
@@ -476,7 +476,7 @@ Status Tracer::IteratorNext(const uint64_t& trace_iter_uid) {
   Trace trace;
   trace.ts = clock_->NowMicros();
   trace.type = trace_type;
-  PutFixed64(&trace.payload, trace_iter_uid);
+  PutFixed64(&trace.payload, tracing_iter_id);
   return WriteTrace(trace);
 }
 

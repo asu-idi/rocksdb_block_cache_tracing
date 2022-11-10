@@ -135,7 +135,7 @@ class Tracer {
   Status IteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
                              const Slice& lower_bound, const Slice upper_bound);
 
-  Status IteratorNext(const uint64_t& trace_iter_uid);
+  Status IteratorNext(const uint64_t& tracing_iter_id);
 
   // Trace MultiGet
 
