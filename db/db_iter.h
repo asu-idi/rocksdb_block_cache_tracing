@@ -248,7 +248,7 @@ class DBIter final : public Iterator {
                  bool* more_recent = nullptr);
 
   // Rest the tracing_iter_id_ for a new one
-  void ResetIterId();
+  void ResetTracingIterId();
 
   // Temporarily pin the blocks that we encounter until ReleaseTempPinnedData()
   // is called

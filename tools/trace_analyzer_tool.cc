@@ -1579,7 +1579,7 @@ Status TraceAnalyzer::Handle(const IteratorNextQueryTraceRecord& record,
                              std::unique_ptr<TraceRecordResult>* /*result*/) {
   total_nexts_++;
 
-  uint64_t tracing_iter_id = record.GetTraceIterId();
+  uint64_t tracing_iter_id = record.GetTracingIterId();
 
   return OutputAnalysisResult(TraceOperationType::kIteratorNext,
                               record.GetTimestamp(), tracing_iter_id);

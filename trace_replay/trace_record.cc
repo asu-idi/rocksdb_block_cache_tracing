@@ -109,7 +109,7 @@ IteratorNextQueryTraceRecord::IteratorNextQueryTraceRecord(
 
 IteratorNextQueryTraceRecord::~IteratorNextQueryTraceRecord() = default;
 
-uint64_t IteratorNextQueryTraceRecord::GetTraceIterId() const {
+uint64_t IteratorNextQueryTraceRecord::GetTracingIterId() const {
   return tracing_iter_id_;
 }
 Status IteratorNextQueryTraceRecord::Accept(

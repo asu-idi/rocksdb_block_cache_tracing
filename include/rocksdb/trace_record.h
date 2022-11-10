@@ -179,7 +179,7 @@ class IteratorNextQueryTraceRecord : public QueryTraceRecord {
 
   virtual ~IteratorNextQueryTraceRecord() override;
 
-  virtual uint64_t GetTraceIterId() const;
+  virtual uint64_t GetTracingIterId() const;
 
   TraceType GetTraceType() const override { return kTraceIteratorNext; }
 
