@@ -1434,7 +1434,10 @@ void DBIter::Seek(const Slice& target) {
     } else {
       upper_bound = Slice("");
     }
-    db_impl_->TraceIteratorSeek(cfd_->GetID(), target, lower_bound, upper_bound)
+    ResetTracingIterId();
+    db_impl_
+        ->TraceIteratorSeek(cfd_->GetID(), target, lower_bound, upper_bound,
+                            tracing_iter_id_)
         .PermitUncheckedError();
   }
 #endif  // ROCKSDB_LITE
@@ -1509,9 +1512,10 @@ void DBIter::SeekForPrev(const Slice& target) {
     } else {
       upper_bound = Slice("");
     }
+    ResetTracingIterId();
     db_impl_
         ->TraceIteratorSeekForPrev(cfd_->GetID(), target, lower_bound,
-                                   upper_bound)
+                                   upper_bound, tracing_iter_id_)
         .PermitUncheckedError();
   }
 #endif  // ROCKSDB_LITE

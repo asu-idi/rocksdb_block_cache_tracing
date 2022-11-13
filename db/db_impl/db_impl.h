@@ -712,10 +712,12 @@ class DBImpl : public DB {
                                  bool* is_blob_index);
 
   Status TraceIteratorSeek(const uint32_t& cf_id, const Slice& key,
-                           const Slice& lower_bound, const Slice upper_bound);
+                           const Slice& lower_bound, const Slice upper_bound,
+                           const uint64_t& tracing_iter_id);
   Status TraceIteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
                                   const Slice& lower_bound,
-                                  const Slice upper_bound);
+                                  const Slice upper_bound,
+                                  const uint64_t& tracing_iter_id);
 
   Status TraceIteratorNext(const uint64_t& tracing_iter_id);
 #endif  // ROCKSDB_LITE

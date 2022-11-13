@@ -229,6 +229,7 @@ Status TracerHelper::DecodeTraceRecord(Trace* trace, int trace_file_version,
       Slice iter_key;
       Slice lower_bound;
       Slice upper_bound;
+      uint64_t iter_id;
 
       if (trace_file_version < 2) {
         DecodeCFAndKey(trace->payload, &cf_id, &iter_key);
@@ -261,6 +262,7 @@ Status TracerHelper::DecodeTraceRecord(Trace* trace, int trace_file_version,
               assert(false);
             }
           }
+          GetFixed64(&buf, &iter_id);
           // unset the rightmost bit.
           payload_map &= (payload_map - 1);
         }
@@ -276,7 +278,7 @@ Status TracerHelper::DecodeTraceRecord(Trace* trace, int trace_file_version,
         record->reset(new IteratorSeekQueryTraceRecord(
             static_cast<IteratorSeekQueryTraceRecord::SeekType>(trace->type),
             cf_id, std::move(ps_key), std::move(ps_lower), std::move(ps_upper),
-            trace->ts));
+            trace->ts, iter_id));
       }
 
       return Status::OK();
@@ -398,7 +400,8 @@ Status Tracer::Get(ColumnFamilyHandle* column_family, const Slice& key) {
 }
 
 Status Tracer::IteratorSeek(const uint32_t& cf_id, const Slice& key,
-                            const Slice& lower_bound, const Slice upper_bound) {
+                            const Slice& lower_bound, const Slice upper_bound,
+                            const uint64_t& tracing_iter_id) {
   TraceType trace_type = kTraceIteratorSeek;
   if (ShouldSkipTrace(trace_type)) {
     return Status::OK();
@@ -429,12 +432,14 @@ Status Tracer::IteratorSeek(const uint32_t& cf_id, const Slice& key,
   if (upper_bound.size() > 0) {
     PutLengthPrefixedSlice(&trace.payload, upper_bound);
   }
+  PutFixed64(&trace.payload, tracing_iter_id);
   return WriteTrace(trace);
 }
 
 Status Tracer::IteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
                                    const Slice& lower_bound,
-                                   const Slice upper_bound) {
+                                   const Slice upper_bound,
+                                   const uint64_t& tracing_iter_id) {
   TraceType trace_type = kTraceIteratorSeekForPrev;
   if (ShouldSkipTrace(trace_type)) {
     return Status::OK();
@@ -465,6 +470,7 @@ Status Tracer::IteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
   if (upper_bound.size() > 0) {
     PutLengthPrefixedSlice(&trace.payload, upper_bound);
   }
+  PutFixed64(&trace.payload, tracing_iter_id);
   return WriteTrace(trace);
 }
 

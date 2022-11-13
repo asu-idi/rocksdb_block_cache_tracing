@@ -200,20 +200,23 @@ class IteratorSeekQueryTraceRecord : public IteratorQueryTraceRecord {
   };
 
   IteratorSeekQueryTraceRecord(SeekType seekType, uint32_t column_family_id,
-                               PinnableSlice&& key, uint64_t timestamp);
+                               PinnableSlice&& key, uint64_t timestamp,
+                               uint64_t tracing_iter_id_);
 
   IteratorSeekQueryTraceRecord(SeekType seekType, uint32_t column_family_id,
-                               const std::string& key, uint64_t timestamp);
+                               const std::string& key, uint64_t timestamp,
+                               uint64_t tracing_iter_id_);
 
   IteratorSeekQueryTraceRecord(SeekType seekType, uint32_t column_family_id,
                                PinnableSlice&& key, PinnableSlice&& lower_bound,
-                               PinnableSlice&& upper_bound, uint64_t timestamp);
+                               PinnableSlice&& upper_bound, uint64_t timestamp,
+                               uint64_t tracing_iter_id_);
 
   IteratorSeekQueryTraceRecord(SeekType seekType, uint32_t column_family_id,
                                const std::string& key,
                                const std::string& lower_bound,
                                const std::string& upper_bound,
-                               uint64_t timestamp);
+                               uint64_t timestamp, uint64_t tracing_iter_id_);
 
   virtual ~IteratorSeekQueryTraceRecord() override;
 
@@ -229,6 +232,8 @@ class IteratorSeekQueryTraceRecord : public IteratorQueryTraceRecord {
   // Key to seek to.
   virtual Slice GetKey() const;
 
+  virtual uint64_t GetTracingIterId() const;
+
   Status Accept(Handler* handler,
                 std::unique_ptr<TraceRecordResult>* result) override;
 
@@ -236,6 +241,7 @@ class IteratorSeekQueryTraceRecord : public IteratorQueryTraceRecord {
   SeekType type_;
   uint32_t cf_id_;
   PinnableSlice key_;
+  uint64_t tracing_iter_id_;
 };
 
 // Trace record for DB::MultiGet() operation.

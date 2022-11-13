@@ -131,9 +131,11 @@ class Tracer {
 
   // Trace Iterators.
   Status IteratorSeek(const uint32_t& cf_id, const Slice& key,
-                      const Slice& lower_bound, const Slice upper_bound);
+                      const Slice& lower_bound, const Slice upper_bound,
+                      const uint64_t& tracing_iter_id);
   Status IteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
-                             const Slice& lower_bound, const Slice upper_bound);
+                             const Slice& lower_bound, const Slice upper_bound,
+                             const uint64_t& tracing_iter_id);
 
   Status IteratorNext(const uint64_t& tracing_iter_id);
 

@@ -259,8 +259,18 @@ class TraceAnalyzer : private TraceRecord::Handler,
                               std::vector<size_t> value_sizes);
 
   Status OutputAnalysisResult(TraceOperationType op_type, uint64_t timestamp,
+                              std::vector<uint32_t> cf_ids,
+                              std::vector<Slice> keys,
+                              std::vector<size_t> value_sizes,
+                              uint64_t tracing_iter_id);
+
+  Status OutputAnalysisResult(TraceOperationType op_type, uint64_t timestamp,
                               uint32_t cf_id, const Slice& key,
                               size_t value_size);
+
+  Status OutputAnalysisResult(TraceOperationType op_type, uint64_t timestamp,
+                              uint32_t cf_id, const Slice& key,
+                              size_t value_size, uint64_t tracing_iter_id);
 
   Status OutputAnalysisResult(TraceOperationType op_type, uint64_t timestamp,
                               uint64_t tracing_iter_id);
@@ -320,6 +330,9 @@ class TraceAnalyzer : private TraceRecord::Handler,
   Status WriteTraceSequence(const uint32_t& type, const uint32_t& cf_id,
                             const Slice& key, const size_t value_size,
                             const uint64_t ts);
+  Status WriteTraceSequence(const uint32_t& type, const uint32_t& cf_id,
+                            const Slice& key, const size_t value_size,
+                            const uint64_t ts, const uint64_t tracing_iter_id);
   Status WriteTraceSequence(const uint32_t& type,
                             const uint64_t tracing_iter_id, const uint64_t ts);
   Status MakeStatisticKeyStatsOrPrefix(TraceStats& stats);

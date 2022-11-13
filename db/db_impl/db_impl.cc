@@ -5875,12 +5875,14 @@ Status DBImpl::EndBlockCacheTrace() {
 
 Status DBImpl::TraceIteratorSeek(const uint32_t& cf_id, const Slice& key,
                                  const Slice& lower_bound,
-                                 const Slice upper_bound) {
+                                 const Slice upper_bound,
+                                 const uint64_t& tracing_iter_id) {
   Status s;
   if (tracer_) {
     InstrumentedMutexLock lock(&trace_mutex_);
     if (tracer_) {
-      s = tracer_->IteratorSeek(cf_id, key, lower_bound, upper_bound);
+      s = tracer_->IteratorSeek(cf_id, key, lower_bound, upper_bound,
+                                tracing_iter_id);
     }
   }
   return s;
@@ -5888,12 +5890,14 @@ Status DBImpl::TraceIteratorSeek(const uint32_t& cf_id, const Slice& key,
 
 Status DBImpl::TraceIteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
                                         const Slice& lower_bound,
-                                        const Slice upper_bound) {
+                                        const Slice upper_bound,
+                                        const uint64_t& tracing_iter_id) {
   Status s;
   if (tracer_) {
     InstrumentedMutexLock lock(&trace_mutex_);
     if (tracer_) {
-      s = tracer_->IteratorSeekForPrev(cf_id, key, lower_bound, upper_bound);
+      s = tracer_->IteratorSeekForPrev(cf_id, key, lower_bound, upper_bound,
+                                       tracing_iter_id);
     }
   }
   return s;

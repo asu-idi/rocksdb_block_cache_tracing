@@ -82,17 +82,18 @@ struct BlockCacheTraceRecord {
 
   BlockCacheTraceRecord() {}
 
+  // TODO: Pass iter id
   BlockCacheTraceRecord(uint64_t _access_timestamp, std::string _block_key,
                         TraceType _block_type, uint64_t _block_size,
                         uint64_t _cf_id, std::string _cf_name, uint32_t _level,
                         uint64_t _sst_fd_number, TableReaderCaller _caller,
                         bool _is_cache_hit, bool _no_insert, uint64_t _get_id,
-                        uint64_t _iter_id = 0,
                         bool _get_from_user_specified_snapshot = false,
                         std::string _referenced_key = "",
                         uint64_t _referenced_data_size = 0,
                         uint64_t _num_keys_in_block = 0,
-                        bool _referenced_key_exist_in_block = false)
+                        bool _referenced_key_exist_in_block = false,
+                        uint64_t _iter_id = 0)
       : access_timestamp(_access_timestamp),
         block_key(_block_key),
         block_type(_block_type),
