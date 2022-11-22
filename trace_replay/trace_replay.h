@@ -82,6 +82,7 @@ enum TracePayloadType : char {
   kMultiGetSize = 8,
   kMultiGetCFIDs = 9,
   kMultiGetKeys = 10,
+  kIterId
 };
 
 class TracerHelper {

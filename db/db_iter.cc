@@ -135,6 +135,7 @@ void DBIter::Next() {
 #ifndef ROCKSDB_LITE
   if (db_impl_ != nullptr && cfd_ != nullptr) {
     // TODO: What do we do if this returns an error?
+
     //    ResetTracingIterId();
     db_impl_->TraceIteratorNext(tracing_iter_id_).PermitUncheckedError();
   }
@@ -1364,7 +1365,7 @@ bool DBIter::IsVisible(SequenceNumber sequence, const Slice& ts,
 
 void DBIter::ResetTracingIterId() {
   tracing_iter_id_ = env_->NowMicros();
-  tracing_iter_id_ += reinterpret_cast<uintptr_t>(iter_.iter());
+  tracing_iter_id_ += reinterpret_cast<uint64_t>(iter_.iter());
   iter_.iter()->SetTracingIterId(tracing_iter_id_);
 }
 

@@ -215,6 +215,24 @@ Status TracerHelper::DecodeTraceRecord(Trace* trace, int trace_file_version,
     case kTraceIteratorNext: {
       uint64_t iter_id;
       Slice buf(trace->payload);
+      GetFixed64(&buf, &trace->payload_map);
+      int64_t payload_map = static_cast<int64_t>(trace->payload_map);
+      while (payload_map) {
+        // Find the rightmost set bit.
+        uint32_t set_pos =
+            static_cast<uint32_t>(log2(payload_map & -payload_map));
+        switch (set_pos) {
+          case TracePayloadType::kIterId: {
+            GetFixed64(&buf, &iter_id);
+            break;
+          }
+          default: {
+            assert(false);
+          }
+        }
+        // unset the rightmost bit.
+        payload_map &= (payload_map - 1);
+      }
       GetFixed64(&buf, &iter_id);
       if (record != nullptr) {
         record->reset(new IteratorNextQueryTraceRecord(iter_id, trace->ts));
@@ -258,11 +276,14 @@ Status TracerHelper::DecodeTraceRecord(Trace* trace, int trace_file_version,
               GetLengthPrefixedSlice(&buf, &upper_bound);
               break;
             }
+            case TracePayloadType::kIterId: {
+              GetFixed64(&buf, &iter_id);
+              break;
+            }
             default: {
               assert(false);
             }
           }
-          GetFixed64(&buf, &iter_id);
           // unset the rightmost bit.
           payload_map &= (payload_map - 1);
         }
@@ -421,6 +442,7 @@ Status Tracer::IteratorSeek(const uint32_t& cf_id, const Slice& key,
     TracerHelper::SetPayloadMap(trace.payload_map,
                                 TracePayloadType::kIterUpperBound);
   }
+  TracerHelper::SetPayloadMap(trace.payload_map, TracePayloadType::kIterId);
   // Encode the Iterator struct members into payload. Make sure add them in
   // order.
   PutFixed64(&trace.payload, trace.payload_map);
@@ -459,6 +481,7 @@ Status Tracer::IteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
     TracerHelper::SetPayloadMap(trace.payload_map,
                                 TracePayloadType::kIterUpperBound);
   }
+  TracerHelper::SetPayloadMap(trace.payload_map, TracePayloadType::kIterId);
   // Encode the Iterator struct members into payload. Make sure add them in
   // order.
   PutFixed64(&trace.payload, trace.payload_map);
@@ -482,6 +505,8 @@ Status Tracer::IteratorNext(const uint64_t& tracing_iter_id) {
   Trace trace;
   trace.ts = clock_->NowMicros();
   trace.type = trace_type;
+  TracerHelper::SetPayloadMap(trace.payload_map, TracePayloadType::kIterId);
+  PutFixed64(&trace.payload, trace.payload_map);
   PutFixed64(&trace.payload, tracing_iter_id);
   return WriteTrace(trace);
 }
