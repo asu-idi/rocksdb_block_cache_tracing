@@ -69,11 +69,11 @@ class BlockCacheTraceHelper {
 struct BlockCacheLookupContext {
   BlockCacheLookupContext(const TableReaderCaller& _caller) : caller(_caller) {}
   BlockCacheLookupContext(const TableReaderCaller& _caller, uint64_t _get_id,
-                          uint64_t iter_id,
+                          uint64_t _iter_id,
                           bool _get_from_user_specified_snapshot)
       : caller(_caller),
         get_id(_get_id),
-        iter_id(iter_id),
+        iter_id(_iter_id),
         get_from_user_specified_snapshot(_get_from_user_specified_snapshot) {}
   const TableReaderCaller caller;
   // These are populated when we perform lookup/insert on block cache. The block
