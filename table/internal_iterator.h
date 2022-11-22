@@ -193,6 +193,10 @@ class InternalIteratorBase : public Cleanable {
   // used by MergingIterator and LevelIterator for now.
   virtual bool IsDeleteRangeSentinelKey() const { return false; }
 
+  void SetTracingIterId(uint64_t tracing_iter_id) {
+    tracing_iter_id_ = tracing_iter_id;
+  }
+
  protected:
   void SeekForPrevImpl(const Slice& target, const CompareInterface* cmp) {
     Seek(target);
@@ -205,6 +209,7 @@ class InternalIteratorBase : public Cleanable {
   }
 
   bool is_mutable_;
+  uint64_t tracing_iter_id_;
 };
 
 using InternalIterator = InternalIteratorBase<Slice>;

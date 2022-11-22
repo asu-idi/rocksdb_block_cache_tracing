@@ -19,6 +19,7 @@ void BlockBasedTableIterator::Seek(const Slice& target) {
 void BlockBasedTableIterator::SeekImpl(const Slice* target,
                                        bool async_prefetch) {
   bool is_first_pass = true;
+  lookup_context_.iter_id = tracing_iter_id_;
   if (async_read_in_progress_) {
     AsyncInitDataBlock(false);
     is_first_pass = false;

@@ -132,14 +132,14 @@ Status BlockCacheTraceWriterImpl::WriteBlockAccess(
     trace.payload.push_back(record.get_from_user_specified_snapshot);
     PutLengthPrefixedSlice(&trace.payload, referenced_key);
   }
-  if (record.caller == kUserIterator) {
-    PutFixed64(&trace.payload, record.iter_id);
-  }
   if (BlockCacheTraceHelper::IsGetOrMultiGetOnDataBlock(record.block_type,
                                                         record.caller)) {
     PutFixed64(&trace.payload, record.referenced_data_size);
     PutFixed64(&trace.payload, record.num_keys_in_block);
     trace.payload.push_back(record.referenced_key_exist_in_block);
+  }
+  if (record.caller == TableReaderCaller::kUserIterator) {
+    PutFixed64(&trace.payload, record.iter_id);
   }
   std::string encoded_trace;
   TracerHelper::EncodeTrace(trace, &encoded_trace);
@@ -287,12 +287,6 @@ Status BlockCacheTraceReader::ReadAccess(BlockCacheTraceRecord* record) {
     }
     record->referenced_key = referenced_key.ToString();
   }
-  if (record->caller == TableReaderCaller::kUserIterator) {
-    if (!GetFixed64(&enc_slice, &record->iter_id)) {
-      return Status::Incomplete(
-          "Incomplete access record: Failed to read the iter id.");
-    }
-  }
   if (BlockCacheTraceHelper::IsGetOrMultiGetOnDataBlock(record->block_type,
                                                         record->caller)) {
     if (!GetFixed64(&enc_slice, &record->referenced_data_size)) {
@@ -310,6 +304,12 @@ Status BlockCacheTraceReader::ReadAccess(BlockCacheTraceRecord* record) {
           "referenced_key_exist_in_block.");
     }
     record->referenced_key_exist_in_block = static_cast<char>(enc_slice[0]);
+  }
+  if (record->caller == TableReaderCaller::kUserIterator) {
+    if (!GetFixed64(&enc_slice, &record->iter_id)) {
+      return Status::Incomplete(
+          "Incomplete access record: Failed to read the iter id.");
+    }
   }
   return Status::OK();
 }
@@ -427,7 +427,7 @@ Status BlockCacheHumanReadableTraceReader::ReadAccess(
   uint64_t block_key_size = ParseUint64(record_strs[18]);
   uint64_t get_key_size = ParseUint64(record_strs[19]);
   uint64_t block_offset = ParseUint64(record_strs[20]);
-  uint64_t iter_id = ParseUint64(record_strs[21]);
+  record->iter_id = ParseUint64(record_strs[21]);
 
   std::string tmp_block_key;
   PutVarint64(&tmp_block_key, block_key);

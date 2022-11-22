@@ -71,8 +71,8 @@ class BlockCacheTracerTest : public testing::Test {
       printf("The trace file is still at %s\n", trace_file_path_.c_str());
       return;
     }
-    EXPECT_OK(env_->DeleteFile(trace_file_path_));
-    EXPECT_OK(env_->DeleteDir(test_path_));
+    //    EXPECT_OK(env_->DeleteFile(trace_file_path_));
+    //    EXPECT_OK(env_->DeleteDir(test_path_));
   }
 
   TableReaderCaller GetCaller(uint32_t key_id) {
