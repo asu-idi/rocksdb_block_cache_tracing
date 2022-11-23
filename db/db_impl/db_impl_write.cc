@@ -212,11 +212,10 @@ Status DBImpl::WriteImpl(const WriteOptions& write_options,
       TraceOptions query_trace_options;
       TraceOptions block_trace_options;
       query_trace_options.max_trace_file_size = 1024;
-      std::string query_trace_filename = "/tmp/trace/trace_dbimpl_write_" +
-                                         dbname_ + "." +
-                                         std::to_string(env_->NowMicros());
+      std::string query_trace_filename =
+          "/tmp/trace/trace_dbimpl_write." + std::to_string(env_->NowMicros());
       std::string block_trace_filename =
-          "/tmp/trace/block_cache_trace_dbimpl_write_" + dbname_ + "." +
+          "/tmp/trace/block_cache_trace_dbimpl_write." +
           std::to_string(env_->NowMicros());
       EnvOptions env_opts;
       std::unique_ptr<TraceWriter> query_trace_writer;
