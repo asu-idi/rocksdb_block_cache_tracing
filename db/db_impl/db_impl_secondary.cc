@@ -386,10 +386,10 @@ Status DBImplSecondary::GetImpl(const ReadOptions& read_options,
           c = '_';
         }
       }
-      std::string query_trace_filename = "/tmp/trace/trace_" +
-                                         processed_dbname + '.' +
+      std::string query_trace_filename = "/tmp/trace/trace" + processed_dbname +
+                                         '.' +
                                          std::to_string(env_->NowMicros());
-      std::string block_trace_filename = "/tmp/trace/block_cache_trace_" +
+      std::string block_trace_filename = "/tmp/trace/block_cache_trace" +
                                          processed_dbname + '.' +
                                          std::to_string(env_->NowMicros());
       EnvOptions env_opts;
