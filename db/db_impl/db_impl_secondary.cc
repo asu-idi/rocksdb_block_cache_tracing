@@ -380,11 +380,18 @@ Status DBImplSecondary::GetImpl(const ReadOptions& read_options,
       TraceOptions query_trace_options;
       TraceOptions block_trace_options;
       query_trace_options.max_trace_file_size = 1024;
-      std::string query_trace_filename = "/tmp/trace/trace_secondary_getimpl." +
+      std::string processed_dbname = dbname_;
+      for (auto& c : processed_dbname) {
+        if (c == '/') {
+          c = '_';
+        }
+      }
+      std::string query_trace_filename = "/tmp/trace/trace_" +
+                                         processed_dbname + '.' +
                                          std::to_string(env_->NowMicros());
-      std::string block_trace_filename =
-          "/tmp/trace/block_cache_trace_secondary_getimpl." +
-          std::to_string(env_->NowMicros());
+      std::string block_trace_filename = "/tmp/trace/block_cache_trace_" +
+                                         processed_dbname + '.' +
+                                         std::to_string(env_->NowMicros());
       EnvOptions env_opts;
       std::unique_ptr<TraceWriter> query_trace_writer;
       std::unique_ptr<TraceWriter> block_trace_writer;

@@ -1989,11 +1989,18 @@ Status DBImpl::GetImpl(const ReadOptions& read_options, const Slice& key,
       TraceOptions query_trace_options;
       TraceOptions block_trace_options;
       query_trace_options.max_trace_file_size = 1024;
-      std::string query_trace_filename = "/tmp/trace/trace_dbimpl_getimpl." +
+      std::string processed_dbname = dbname_;
+      for (auto& c : processed_dbname) {
+        if (c == '/') {
+          c = '_';
+        }
+      }
+      std::string query_trace_filename = "/tmp/trace/trace_" +
+                                         processed_dbname + '.' +
                                          std::to_string(env_->NowMicros());
-      std::string block_trace_filename =
-          "/tmp/trace/block_cache_trace_dbimpl_getimpl." +
-          std::to_string(env_->NowMicros());
+      std::string block_trace_filename = "/tmp/trace/block_cache_trace_" +
+                                         processed_dbname + '.' +
+                                         std::to_string(env_->NowMicros());
       EnvOptions env_opts;
       std::unique_ptr<TraceWriter> query_trace_writer;
       std::unique_ptr<TraceWriter> block_trace_writer;
@@ -2314,11 +2321,18 @@ std::vector<Status> DBImpl::MultiGet(
       TraceOptions query_trace_options;
       TraceOptions block_trace_options;
       query_trace_options.max_trace_file_size = 1024;
-      std::string query_trace_filename =
-          "/tmp/trace/trace_dbimpl_mget." + std::to_string(env_->NowMicros());
-      std::string block_trace_filename =
-          "/tmp/trace/block_cache_trace_dbimpl_mget." +
-          std::to_string(env_->NowMicros());
+      std::string processed_dbname = dbname_;
+      for (auto& c : processed_dbname) {
+        if (c == '/') {
+          c = '_';
+        }
+      }
+      std::string query_trace_filename = "/tmp/trace/trace_" +
+                                         processed_dbname + '.' +
+                                         std::to_string(env_->NowMicros());
+      std::string block_trace_filename = "/tmp/trace/block_cache_trace_" +
+                                         processed_dbname + '.' +
+                                         std::to_string(env_->NowMicros());
       EnvOptions env_opts;
       std::unique_ptr<TraceWriter> query_trace_writer;
       std::unique_ptr<TraceWriter> block_trace_writer;
@@ -2665,11 +2679,18 @@ void DBImpl::MultiGet(const ReadOptions& read_options, const size_t num_keys,
       TraceOptions query_trace_options;
       TraceOptions block_trace_options;
       query_trace_options.max_trace_file_size = 1024;
-      std::string query_trace_filename =
-          "/tmp/trace/trace_dbimpl_mget." + std::to_string(env_->NowMicros());
-      std::string block_trace_filename =
-          "/tmp/trace/block_cache_trace_dbimpl_mget." +
-          std::to_string(env_->NowMicros());
+      std::string processed_dbname = dbname_;
+      for (auto& c : processed_dbname) {
+        if (c == '/') {
+          c = '_';
+        }
+      }
+      std::string query_trace_filename = "/tmp/trace/trace_" +
+                                         processed_dbname + '.' +
+                                         std::to_string(env_->NowMicros());
+      std::string block_trace_filename = "/tmp/trace/block_cache_trace_" +
+                                         processed_dbname + '.' +
+                                         std::to_string(env_->NowMicros());
       EnvOptions env_opts;
       std::unique_ptr<TraceWriter> query_trace_writer;
       std::unique_ptr<TraceWriter> block_trace_writer;
