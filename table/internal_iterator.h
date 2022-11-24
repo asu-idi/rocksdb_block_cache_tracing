@@ -209,7 +209,7 @@ class InternalIteratorBase : public Cleanable {
   }
 
   bool is_mutable_;
-  uint64_t tracing_iter_id_;
+  uint64_t tracing_iter_id_ = 0;
 };
 
 using InternalIterator = InternalIteratorBase<Slice>;
