@@ -247,7 +247,7 @@ class DBIter final : public Iterator {
   bool IsVisible(SequenceNumber sequence, const Slice& ts,
                  bool* more_recent = nullptr);
 
-  // Rest the tracing_iter_id_ for a new one
+  // Reset the tracing_iter_id_ for a new one
   void ResetTracingIterId();
 
   // Temporarily pin the blocks that we encounter until ReleaseTempPinnedData()
