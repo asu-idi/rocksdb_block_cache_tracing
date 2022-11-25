@@ -4830,19 +4830,19 @@ TEST_F(DBTest2, TraceAndManualReplay) {
         IteratorSeekQueryTraceRecord::kSeekForPrev}) {
     // Seek to an existing key.
     record.reset(new IteratorSeekQueryTraceRecord(
-        seekType, handles[0]->GetID(), "trace-record-write1", fake_ts++));
+        seekType, handles[0]->GetID(), "trace-record-write1", fake_ts++, 0));
     ASSERT_OK(replayer->Execute(record, &result));
     ASSERT_TRUE(result != nullptr);
     ASSERT_OK(result->Accept(&res_handler));  // Seek x 1 in one iteration
     // Seek to an non-existing key, should still return Status::OK().
     record.reset(new IteratorSeekQueryTraceRecord(
-        seekType, handles[0]->GetID(), "trace-record-get", fake_ts++));
+        seekType, handles[0]->GetID(), "trace-record-get", fake_ts++, 0));
     ASSERT_OK(replayer->Execute(record, &result));
     ASSERT_TRUE(result != nullptr);
     ASSERT_OK(result->Accept(&res_handler));  // Seek x 2 in one iteration
     // Seek from an invalid cf_id.
     record.reset(new IteratorSeekQueryTraceRecord(seekType, invalid_cf_id,
-                                                  "whatever", fake_ts++));
+                                                  "whatever", fake_ts++, 0));
     ASSERT_TRUE(replayer->Execute(record, &result).IsCorruption());
     ASSERT_TRUE(result == nullptr);
   }

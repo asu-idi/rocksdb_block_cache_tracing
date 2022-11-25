@@ -1574,7 +1574,7 @@ Status BlockCacheTraceAnalyzer::Analyze() {
                                     !access.is_cache_hit);
     caller_miss_ratio_stats_map_[access.caller].UpdateMetrics(
         access.access_timestamp, is_user_access(access.caller),
-        access.is_cache_hit == !access.is_cache_hit);
+        !access.is_cache_hit);
 
     if (cache_simulator_) {
       cache_simulator_->Access(access);

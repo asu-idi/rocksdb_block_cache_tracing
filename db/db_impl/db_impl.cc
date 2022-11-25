@@ -1989,10 +1989,18 @@ Status DBImpl::GetImpl(const ReadOptions& read_options, const Slice& key,
       TraceOptions query_trace_options;
       TraceOptions block_trace_options;
       query_trace_options.max_trace_file_size = 1024;
-      std::string query_trace_filename =
-          "/tmp/trace/trace." + std::to_string(env_->NowMicros());
-      std::string block_trace_filename =
-          "/tmp/trace/block_cache_trace." + std::to_string(env_->NowMicros());
+      std::string processed_dbname = dbname_;
+      for (auto& c : processed_dbname) {
+        if (c == '/') {
+          c = '_';
+        }
+      }
+      std::string query_trace_filename = "/tmp/trace/trace" + processed_dbname +
+                                         '.' +
+                                         std::to_string(env_->NowMicros());
+      std::string block_trace_filename = "/tmp/trace/block_cache_trace" +
+                                         processed_dbname + '.' +
+                                         std::to_string(env_->NowMicros());
       EnvOptions env_opts;
       std::unique_ptr<TraceWriter> query_trace_writer;
       std::unique_ptr<TraceWriter> block_trace_writer;
@@ -2313,10 +2321,18 @@ std::vector<Status> DBImpl::MultiGet(
       TraceOptions query_trace_options;
       TraceOptions block_trace_options;
       query_trace_options.max_trace_file_size = 1024;
-      std::string query_trace_filename =
-          "/tmp/trace/trace." + std::to_string(env_->NowMicros());
-      std::string block_trace_filename =
-          "/tmp/trace/block_cache_trace." + std::to_string(env_->NowMicros());
+      std::string processed_dbname = dbname_;
+      for (auto& c : processed_dbname) {
+        if (c == '/') {
+          c = '_';
+        }
+      }
+      std::string query_trace_filename = "/tmp/trace/trace" + processed_dbname +
+                                         '.' +
+                                         std::to_string(env_->NowMicros());
+      std::string block_trace_filename = "/tmp/trace/block_cache_trace" +
+                                         processed_dbname + '.' +
+                                         std::to_string(env_->NowMicros());
       EnvOptions env_opts;
       std::unique_ptr<TraceWriter> query_trace_writer;
       std::unique_ptr<TraceWriter> block_trace_writer;
@@ -2663,10 +2679,18 @@ void DBImpl::MultiGet(const ReadOptions& read_options, const size_t num_keys,
       TraceOptions query_trace_options;
       TraceOptions block_trace_options;
       query_trace_options.max_trace_file_size = 1024;
-      std::string query_trace_filename =
-          "/tmp/trace/trace." + std::to_string(env_->NowMicros());
-      std::string block_trace_filename =
-          "/tmp/trace/block_cache_trace." + std::to_string(env_->NowMicros());
+      std::string processed_dbname = dbname_;
+      for (auto& c : processed_dbname) {
+        if (c == '/') {
+          c = '_';
+        }
+      }
+      std::string query_trace_filename = "/tmp/trace/trace" + processed_dbname +
+                                         '.' +
+                                         std::to_string(env_->NowMicros());
+      std::string block_trace_filename = "/tmp/trace/block_cache_trace" +
+                                         processed_dbname + '.' +
+                                         std::to_string(env_->NowMicros());
       EnvOptions env_opts;
       std::unique_ptr<TraceWriter> query_trace_writer;
       std::unique_ptr<TraceWriter> block_trace_writer;
@@ -5875,12 +5899,14 @@ Status DBImpl::EndBlockCacheTrace() {
 
 Status DBImpl::TraceIteratorSeek(const uint32_t& cf_id, const Slice& key,
                                  const Slice& lower_bound,
-                                 const Slice upper_bound) {
+                                 const Slice upper_bound,
+                                 const uint64_t& tracing_iter_id) {
   Status s;
   if (tracer_) {
     InstrumentedMutexLock lock(&trace_mutex_);
     if (tracer_) {
-      s = tracer_->IteratorSeek(cf_id, key, lower_bound, upper_bound);
+      s = tracer_->IteratorSeek(cf_id, key, lower_bound, upper_bound,
+                                tracing_iter_id);
     }
   }
   return s;
@@ -5888,23 +5914,25 @@ Status DBImpl::TraceIteratorSeek(const uint32_t& cf_id, const Slice& key,
 
 Status DBImpl::TraceIteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
                                         const Slice& lower_bound,
-                                        const Slice upper_bound) {
+                                        const Slice upper_bound,
+                                        const uint64_t& tracing_iter_id) {
   Status s;
   if (tracer_) {
     InstrumentedMutexLock lock(&trace_mutex_);
     if (tracer_) {
-      s = tracer_->IteratorSeekForPrev(cf_id, key, lower_bound, upper_bound);
+      s = tracer_->IteratorSeekForPrev(cf_id, key, lower_bound, upper_bound,
+                                       tracing_iter_id);
     }
   }
   return s;
 }
 
-Status DBImpl::TraceIteratorNext(const uint64_t& trace_iter_uid) {
+Status DBImpl::TraceIteratorNext(const uint64_t& tracing_iter_id) {
   Status s;
   if (tracer_) {
     InstrumentedMutexLock lock(&trace_mutex_);
     if (tracer_) {
-      s = tracer_->IteratorNext(trace_iter_uid);
+      s = tracer_->IteratorNext(tracing_iter_id);
     }
   }
   return s;

@@ -69,9 +69,11 @@ class BlockCacheTraceHelper {
 struct BlockCacheLookupContext {
   BlockCacheLookupContext(const TableReaderCaller& _caller) : caller(_caller) {}
   BlockCacheLookupContext(const TableReaderCaller& _caller, uint64_t _get_id,
+                          uint64_t _iter_id,
                           bool _get_from_user_specified_snapshot)
       : caller(_caller),
         get_id(_get_id),
+        iter_id(_iter_id),
         get_from_user_specified_snapshot(_get_from_user_specified_snapshot) {}
   const TableReaderCaller caller;
   // These are populated when we perform lookup/insert on block cache. The block
@@ -87,6 +89,7 @@ struct BlockCacheLookupContext {
   // how many blocks a Get/MultiGet request accesses. We can also measure the
   // impact of row cache vs block cache.
   uint64_t get_id = 0;
+  uint64_t iter_id = 0;
   std::string referenced_key;
   bool get_from_user_specified_snapshot = false;
 

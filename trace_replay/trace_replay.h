@@ -82,6 +82,7 @@ enum TracePayloadType : char {
   kMultiGetSize = 8,
   kMultiGetCFIDs = 9,
   kMultiGetKeys = 10,
+  kIterId
 };
 
 class TracerHelper {
@@ -131,11 +132,13 @@ class Tracer {
 
   // Trace Iterators.
   Status IteratorSeek(const uint32_t& cf_id, const Slice& key,
-                      const Slice& lower_bound, const Slice upper_bound);
+                      const Slice& lower_bound, const Slice upper_bound,
+                      const uint64_t& tracing_iter_id);
   Status IteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
-                             const Slice& lower_bound, const Slice upper_bound);
+                             const Slice& lower_bound, const Slice upper_bound,
+                             const uint64_t& tracing_iter_id);
 
-  Status IteratorNext(const uint64_t& trace_iter_uid);
+  Status IteratorNext(const uint64_t& tracing_iter_id);
 
   // Trace MultiGet
 

@@ -71,8 +71,8 @@ class BlockCacheTracerTest : public testing::Test {
       printf("The trace file is still at %s\n", trace_file_path_.c_str());
       return;
     }
-    EXPECT_OK(env_->DeleteFile(trace_file_path_));
-    EXPECT_OK(env_->DeleteDir(test_path_));
+    //    EXPECT_OK(env_->DeleteFile(trace_file_path_));
+    //    EXPECT_OK(env_->DeleteDir(test_path_));
   }
 
   TableReaderCaller GetCaller(uint32_t key_id) {
@@ -123,6 +123,7 @@ class BlockCacheTracerTest : public testing::Test {
           kRefKeyPrefix + std::to_string(key_id) + std::string(8, 0);
       record.referenced_key_exist_in_block = true;
       record.num_keys_in_block = kNumKeysInBlock;
+      record.iter_id = 6524145190436369056;
       ASSERT_OK(writer->WriteBlockAccess(
           record, record.block_key, record.cf_name, record.referenced_key));
     }

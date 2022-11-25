@@ -334,7 +334,7 @@ DEFINE_SYNC_AND_ASYNC(void, BlockBasedTable::MultiGet)
     tracing_mget_id = sst_file_range.begin()->get_context->get_tracing_get_id();
   }
   BlockCacheLookupContext lookup_context{
-      TableReaderCaller::kUserMultiGet, tracing_mget_id,
+      TableReaderCaller::kUserMultiGet, tracing_mget_id, 0,
       /*_get_from_user_specified_snapshot=*/read_options.snapshot != nullptr};
   FullFilterKeysMayMatch(filter, &sst_file_range, no_io, prefix_extractor,
                          &lookup_context, read_options.rate_limiter_priority);
@@ -561,7 +561,7 @@ DEFINE_SYNC_AND_ASYNC(void, BlockBasedTable::MultiGet)
         uint64_t referenced_data_size = 0;
         bool does_referenced_key_exist = false;
         BlockCacheLookupContext lookup_data_block_context(
-            TableReaderCaller::kUserMultiGet, tracing_mget_id,
+            TableReaderCaller::kUserMultiGet, tracing_mget_id, 0,
             /*_get_from_user_specified_snapshot=*/read_options.snapshot !=
                 nullptr);
         if (first_block) {
@@ -711,7 +711,7 @@ DEFINE_SYNC_AND_ASYNC(void, BlockBasedTable::MultiGet)
               rep_->sst_number_for_tracing(), lookup_data_block_context.caller,
               lookup_data_block_context.is_cache_hit,
               lookup_data_block_context.no_insert,
-              lookup_data_block_context.get_id,
+              lookup_data_block_context.get_id, 0,
               lookup_data_block_context.get_from_user_specified_snapshot,
               /*_referenced_key=*/"", referenced_data_size,
               lookup_data_block_context.num_keys_in_block,

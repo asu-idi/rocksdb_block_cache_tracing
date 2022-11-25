@@ -80,6 +80,7 @@ class TraceAnalyzerTest : public testing::Test {
 
     WriteBatch batch;
     ASSERT_OK(batch.Put("a", "aaaaaaaaa"));
+    ASSERT_OK(batch.Put("m", "aaaaaaaaa"));
     ASSERT_OK(batch.Merge("b", "aaaaaaaaaaaaaaaaaaaa"));
     ASSERT_OK(batch.Delete("c"));
     ASSERT_OK(batch.SingleDelete("d"));
@@ -109,6 +110,8 @@ class TraceAnalyzerTest : public testing::Test {
     single_iter->Seek("a");
     ASSERT_OK(single_iter->status());
     single_iter->SeekForPrev("b");
+    ASSERT_OK(single_iter->status());
+    single_iter->Next();
     ASSERT_OK(single_iter->status());
     single_iter->Next();
     ASSERT_OK(single_iter->status());
