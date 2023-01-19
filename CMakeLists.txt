@@ -143,6 +143,7 @@ else()
     add_definitions(-DSNAPPY)
     list(APPEND THIRDPARTY_LIBS Snappy::snappy)
   endif()
+  message(Snappy_FOUND)
 
   if(WITH_ZLIB)
     find_package(ZLIB REQUIRED)
