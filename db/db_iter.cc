@@ -1367,6 +1367,8 @@ void DBIter::ResetTracingIterId() {
   tracing_iter_id_ = env_->NowMicros();
   tracing_iter_id_ += reinterpret_cast<uint64_t>(iter_.iter());
   iter_.iter()->SetTracingIterId(tracing_iter_id_);
+  ROCKS_LOG_INFO(logger_, "Resetting tracing iter id to %" PRIu64,
+                 tracing_iter_id_);
 }
 
 void DBIter::SetSavedKeyToSeekTarget(const Slice& target) {
