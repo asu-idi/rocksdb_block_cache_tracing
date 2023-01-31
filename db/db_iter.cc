@@ -1364,8 +1364,10 @@ bool DBIter::IsVisible(SequenceNumber sequence, const Slice& ts,
 }
 
 void DBIter::ResetTracingIterId() {
-  tracing_iter_id_ = env_->NowMicros();
-  tracing_iter_id_ += reinterpret_cast<uint64_t>(iter_.iter());
+  //  tracing_iter_id_ = env_->NowMicros();
+  //  tracing_iter_id_ += reinterpret_cast<uint64_t>(iter_.iter());
+  tracing_iter_id_ = env_->iter_counter.fetch_add(1, std::memory_order_relaxed);
+
   iter_.iter()->SetTracingIterId(tracing_iter_id_);
   ROCKS_LOG_INFO(logger_, "Resetting tracing iter id to %" PRIu64,
                  tracing_iter_id_);
