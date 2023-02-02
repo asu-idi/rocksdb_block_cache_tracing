@@ -160,7 +160,7 @@ class Env : public Customizable {
     // Size of file in bytes
     uint64_t size_bytes;
   };
-  std::atomic<uint64_t> iter_counter = 0;
+  std::atomic<uint64_t> iter_counter;
 
   Env();
   // Construct an Env with a separate FileSystem and/or SystemClock
