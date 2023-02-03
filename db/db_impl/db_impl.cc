@@ -556,8 +556,6 @@ Status DBImpl::MaybeReleaseTimestampedSnapshotsAndCheck() {
 Status DBImpl::CloseHelper() {
   // Guarantee that there is no background error recovery in progress before
   // continuing with the shutdown
-  EndTrace();
-  EndBlockCacheTrace();
 
   mutex_.Lock();
   shutdown_initiated_ = true;
