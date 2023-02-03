@@ -556,6 +556,8 @@ Status DBImpl::MaybeReleaseTimestampedSnapshotsAndCheck() {
 Status DBImpl::CloseHelper() {
   // Guarantee that there is no background error recovery in progress before
   // continuing with the shutdown
+  EndTrace();
+  EndBlockCacheTrace();
   mutex_.Lock();
   shutdown_initiated_ = true;
   error_handler_.CancelErrorRecovery();
@@ -5905,9 +5907,6 @@ Status DBImpl::TraceIteratorSeek(const uint32_t& cf_id, const Slice& key,
   if (tracer_) {
     InstrumentedMutexLock lock(&trace_mutex_);
     if (tracer_) {
-      ROCKS_LOG_INFO(immutable_db_options_.info_log,
-                     "TraceIteratorSeek: tracing_iter_id %" PRIu64,
-                     tracing_iter_id);
       s = tracer_->IteratorSeek(cf_id, key, lower_bound, upper_bound,
                                 tracing_iter_id);
     }
