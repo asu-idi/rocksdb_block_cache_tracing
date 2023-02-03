@@ -556,8 +556,24 @@ Status DBImpl::MaybeReleaseTimestampedSnapshotsAndCheck() {
 Status DBImpl::CloseHelper() {
   // Guarantee that there is no background error recovery in progress before
   // continuing with the shutdown
-  EndTrace();
-  EndBlockCacheTrace();
+  Status status = EndTrace();
+  if (!status.ok()) {
+    ROCKS_LOG_INFO(immutable_db_options_.info_log, "Failed to end trace: %s",
+                   status.ToString().c_str());
+  } else {
+    ROCKS_LOG_INFO(immutable_db_options_.info_log, "Succeeded to end trace: %s",
+                   status.ToString().c_str());
+  }
+  status = EndBlockCacheTrace();
+  if (!status.ok()) {
+    ROCKS_LOG_INFO(immutable_db_options_.info_log,
+                   "Failed to end block cache trace: %s",
+                   status.ToString().c_str());
+  } else {
+    ROCKS_LOG_INFO(immutable_db_options_.info_log,
+                   "Succeeded to end block cache trace: %s",
+                   status.ToString().c_str());
+  }
   mutex_.Lock();
   shutdown_initiated_ = true;
   error_handler_.CancelErrorRecovery();
