@@ -97,7 +97,11 @@ Status FileTraceWriter::Close() {
 }
 
 Status FileTraceWriter::Write(const Slice& data) {
-  return file_writer_->Append(data);
+  Status s = file_writer_->Append(data);
+  if (!s.ok()) {
+    return s;
+  }
+  return file_writer_->Flush();
 }
 
 uint64_t FileTraceWriter::GetFileSize() { return file_writer_->GetFileSize(); }
