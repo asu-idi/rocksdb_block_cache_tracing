@@ -175,14 +175,14 @@ std::map<std::string, int> taOptToIndex = {
     {"delete", 2},        {"single_delete", 3},
     {"range_delete", 4},  {"merge", 5},
     {"iterator_Seek", 6}, {"iterator_SeekForPrev", 7},
-    {"multiget", 8}};
+    {"multiget", 8},      {"iterator_Next", 9}};
 
 std::map<int, std::string> taIndexToOpt = {
     {0, "get"},           {1, "put"},
     {2, "delete"},        {3, "single_delete"},
     {4, "range_delete"},  {5, "merge"},
     {6, "iterator_Seek"}, {7, "iterator_SeekForPrev"},
-    {8, "multiget"}};
+    {8, "multiget"},      {9, "iterator_Next"}};
 
 namespace {
 
