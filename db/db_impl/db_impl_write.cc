@@ -211,7 +211,6 @@ Status DBImpl::WriteImpl(const WriteOptions& write_options,
     if (tracer_.get() == nullptr) {
       TraceOptions query_trace_options;
       TraceOptions block_trace_options;
-      query_trace_options.max_trace_file_size = 1024;
       std::string processed_dbname = dbname_;
       for (auto& c : processed_dbname) {
         if (c == '/') {
