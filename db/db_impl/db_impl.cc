@@ -2315,6 +2315,11 @@ std::vector<Status> DBImpl::MultiGet(
     return stat_list;
   }
 
+  if (keys.empty()) {
+    ROCKS_LOG_INFO(immutable_db_options_.info_log,
+                   "MultiGet with empty key list");
+  }
+
   if (tracer_.get() == nullptr) {
     InstrumentedMutexLock lock(&trace_mutex_);
     if (tracer_.get() == nullptr) {
