@@ -1366,6 +1366,7 @@ bool DBIter::IsVisible(SequenceNumber sequence, const Slice& ts,
 void DBIter::ResetTracingIterId() {
   //  tracing_iter_id_ = env_->NowMicros();
   //  tracing_iter_id_ += reinterpret_cast<uint64_t>(iter_.iter());
+  InstrumentedMutexLock lock(&iter_id_mutex_);
   tracing_iter_id_ =
       env_->iter_counter.fetch_add(1, std::memory_order_relaxed) + 1;
 

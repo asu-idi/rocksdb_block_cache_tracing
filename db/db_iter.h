@@ -389,6 +389,8 @@ class DBIter final : public Iterator {
   MergeContext merge_context_;
   LocalStatistics local_stats_;
   PinnedIteratorsManager pinned_iters_mgr_;
+
+  InstrumentedMutex iter_id_mutex_;
 #ifdef ROCKSDB_LITE
   ROCKSDB_FIELD_UNUSED
 #endif
