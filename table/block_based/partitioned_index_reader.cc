@@ -192,8 +192,8 @@ Status PartitionIndexReader::CacheDependencies(const ReadOptions& ro,
         /*async_read=*/false);
     ROCKS_LOG_INFO(rep->ioptions.info_log,
                    "Tracing in PartitionIndexReader::CacheDependencies, "
-                   "Caller: %u, Iterator ID: %llu",
-                   lookup_context.caller, lookup_context.iter_id);
+                   "Caller: %u, Iterator ID: %u",
+                   lookup_context.caller, uint32_t(lookup_context.iter_id));
 
     if (!s.ok()) {
       return s;
