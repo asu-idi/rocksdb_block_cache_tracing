@@ -344,22 +344,26 @@ Status TracerHelper::DecodeTraceRecord(Trace* trace, int trace_file_version,
         payload_map &= (payload_map - 1);
       }
       if (multiget_size == 0) {
-        return Status::InvalidArgument("Empty MultiGet cf_ids or keys.");
-      }
-
-      // Decode the cfids_payload and keys_payload
-      cf_ids.reserve(multiget_size);
-      multiget_keys.reserve(multiget_size);
-      for (uint32_t i = 0; i < multiget_size; i++) {
-        uint32_t tmp_cfid;
-        Slice tmp_key;
-        GetFixed32(&cfids_payload, &tmp_cfid);
-        GetLengthPrefixedSlice(&keys_payload, &tmp_key);
-        cf_ids.push_back(tmp_cfid);
-        Slice s(tmp_key);
+        multiget_size = 1;
+        cf_ids.push_back(0);
         PinnableSlice ps;
-        ps.PinSelf(s);
+        ps.PinSelf("null");
         multiget_keys.push_back(std::move(ps));
+      } else {
+        // Decode the cfids_payload and keys_payload
+        cf_ids.reserve(multiget_size);
+        multiget_keys.reserve(multiget_size);
+        for (uint32_t i = 0; i < multiget_size; i++) {
+          uint32_t tmp_cfid;
+          Slice tmp_key;
+          GetFixed32(&cfids_payload, &tmp_cfid);
+          GetLengthPrefixedSlice(&keys_payload, &tmp_key);
+          cf_ids.push_back(tmp_cfid);
+          Slice s(tmp_key);
+          PinnableSlice ps;
+          ps.PinSelf(s);
+          multiget_keys.push_back(std::move(ps));
+        }
       }
 
       if (record != nullptr) {

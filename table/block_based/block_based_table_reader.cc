@@ -1752,6 +1752,10 @@ Status BlockBasedTable::MaybeReadBlockAndLoadToCache(
           ->WriteBlockAccess(access_record, key, rep_->cf_name_for_tracing(),
                              lookup_context->referenced_key)
           .PermitUncheckedError();
+      ROCKS_LOG_INFO(rep_->ioptions.info_log,
+                     "Tracing in MaybeReadBlockAndLoadToCache, Caller: "
+                     "%u,Iterator ID: %" PRIu64,
+                     access_record.caller, access_record.iter_id);
     }
   }
 
@@ -2304,6 +2308,9 @@ Status BlockBasedTable::Get(const ReadOptions& read_options, const Slice& key,
                                lookup_data_block_context.block_key,
                                rep_->cf_name_for_tracing(), referenced_key)
             .PermitUncheckedError();
+        ROCKS_LOG_INFO(rep_->ioptions.info_log,
+                       "Tracing in Get, Caller: %u,Iterator ID: %" PRIu64,
+                       access_record.caller, access_record.iter_id);
       }
 
       if (done) {
