@@ -520,6 +520,11 @@ Status PartitionedFilterBlockReader::CacheDependencies(const ReadOptions& ro,
         /* wait */ true, /* for_compaction */ false, &block, BlockType::kFilter,
         nullptr /* get_context */, &lookup_context, nullptr /* contents */,
         false);
+    ROCKS_LOG_INFO(
+        rep->ioptions.info_log,
+        "Tracing in PartitionedFilterBlockReader::CacheDependencies, Caller: "
+        "%u, Iterator ID: %" PRIu64,
+        lookup_context.caller, lookup_context.iter_id);
     if (!s.ok()) {
       return s;
     }

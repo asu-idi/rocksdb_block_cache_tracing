@@ -9,6 +9,7 @@
 #include "table/block_based/partitioned_index_reader.h"
 
 #include "file/random_access_file_reader.h"
+#include "logging/logging.h"
 #include "table/block_based/block_based_table_reader.h"
 #include "table/block_based/partitioned_index_iterator.h"
 
@@ -189,6 +190,10 @@ Status PartitionIndexReader::CacheDependencies(const ReadOptions& ro,
         /*wait=*/true, /*for_compaction=*/false, &block, BlockType::kIndex,
         /*get_context=*/nullptr, &lookup_context, /*contents=*/nullptr,
         /*async_read=*/false);
+    ROCKS_LOG_INFO(rep->ioptions.info_log,
+                   "Tracing in PartitionIndexReader::CacheDependencies, "
+                   "Caller: %u, Iterator ID: %llu",
+                   lookup_context.caller, lookup_context.iter_id);
 
     if (!s.ok()) {
       return s;
