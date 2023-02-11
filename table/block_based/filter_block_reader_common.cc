@@ -6,6 +6,7 @@
 
 #include "table/block_based/filter_block_reader_common.h"
 
+#include "logging/logging.h"
 #include "monitoring/perf_context_imp.h"
 #include "table/block_based/block_based_table_reader.h"
 #include "table/block_based/parsed_full_filter_block.h"
@@ -33,7 +34,11 @@ Status FilterBlockReaderCommon<TBlocklike>::ReadFilterBlock(
                            block_type, get_context, lookup_context,
                            /* for_compaction */ false, use_cache,
                            /* wait_for_cache */ true, /* async_read */ false);
-
+  ROCKS_LOG_INFO(
+      rep->ioptions.info_log,
+      "FilterBlockReaderCommon<TBlocklike>::ReadFilterBlock, Caller: "
+      "%u, Iterator ID: %llu",
+      lookup_context->caller, lookup_context->iter_id);
   return s;
 }
 

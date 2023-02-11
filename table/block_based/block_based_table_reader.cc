@@ -1777,10 +1777,6 @@ Status BlockBasedTable::RetrieveBlock(
                                      for_compaction, out_parsed_block,
                                      block_type, get_context, lookup_context,
                                      /*contents=*/nullptr, async_read);
-    ROCKS_LOG_INFO(rep_->ioptions.info_log,
-                   "Tracing in BlockBasedTable::RetrieveBlock, Caller: "
-                   "%u, Iterator ID: %" PRIu64,
-                   lookup_context->caller, lookup_context->iter_id);
 
     if (!s.ok()) {
       return s;

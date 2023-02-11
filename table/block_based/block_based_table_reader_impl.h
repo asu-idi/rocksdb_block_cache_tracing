@@ -7,6 +7,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 #pragma once
+#include "logging/logging.h"
 #include "table/block_based/block_based_table_reader.h"
 #include "table/block_based/reader_common.h"
 
@@ -59,6 +60,11 @@ TBlockIter* BlockBasedTable::NewDataBlockIterator(
         block_type, get_context, lookup_context, for_compaction,
         /* use_cache */ true, /* wait_for_cache */ true, async_read);
   }
+
+  ROCKS_LOG_INFO(rep_->ioptions.info_log,
+                 "Tracing in BlockBasedTable::NewDataBlockIterator, Caller: "
+                 "%u, Iterator ID: %llu",
+                 lookup_context->caller, lookup_context->iter_id);
 
   if (s.IsTryAgain() && async_read) {
     return iter;

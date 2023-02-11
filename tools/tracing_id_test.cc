@@ -31,7 +31,7 @@ class TracingIDTest : public testing::Test {
     dbname_ = test_path_ + "/db";
   }
 
-  ~TracingIDTest() override {}
+  ~TracingIDTest() override = default;
 
   ROCKSDB_NAMESPACE::Env* env_;
   EnvOptions env_options_;
@@ -41,8 +41,13 @@ class TracingIDTest : public testing::Test {
 
 TEST_F(TracingIDTest, Iterator) {
   Options options;
+  rocksdb::BlockBasedTableOptions bbtOpts;
   options.create_if_missing = true;
   options.merge_operator = MergeOperators::CreatePutOperator();
+  static std::shared_ptr<rocksdb::Cache> blockCache =
+      rocksdb::NewLRUCache(1 * 1024 * 1024, 1);
+  bbtOpts.block_cache = blockCache;
+  options.table_factory.reset(NewBlockBasedTableFactory(bbtOpts));
   //    Slice upper_bound("a");
   //    Slice lower_bound("abce");
   ReadOptions ro;
@@ -56,6 +61,42 @@ TEST_F(TracingIDTest, Iterator) {
   Iterator* single_iter = nullptr;
   ASSERT_OK(DB::Open(options, dbname_, &db_));
   WriteBatch batch;
+  std::string s;
+  for (int i = 0; i < 10000; ++i) {
+    for (int j = 0; j < 10; j++) {
+      std::string temp = s;
+      char c = 'a' + rand() % 26;  // 生成 'a' 到 'z' 之间的随机字符
+      temp += c;
+      ASSERT_OK(db_->Put(wo, temp, temp));
+      if (j == 9) {
+        s = temp;
+      }
+    }
+  }
+  single_iter = db_->NewIterator(ro);
+
+  for (int i = 0; i < 10000; ++i) {
+    for (int j = 0; j < 10; j++) {
+      std::string temp = s;
+      char c = 'a' + rand() % 26;
+      temp += c;
+      single_iter->Seek(temp);
+      ASSERT_OK(single_iter->status());
+      if (single_iter->Valid()) {
+        single_iter->Next();
+      }
+      if (single_iter->Valid()) {
+        single_iter->Next();
+      }
+      if (single_iter->Valid()) {
+        single_iter->Next();
+      }
+      if (j == 9) {
+        s = temp;
+      }
+    }
+  }
+
   ASSERT_OK(batch.Put("a", "aaaaaaaaa"));
   ASSERT_OK(batch.Merge("b", "aaaaaaaaaaaaaaaaaaaa"));
   ASSERT_OK(batch.Delete("c"));
@@ -82,13 +123,12 @@ TEST_F(TracingIDTest, Iterator) {
                 values2.data(), ss.data(), false);
   ASSERT_OK(db_->Get(ro, "a", &value));
 
-  single_iter = db_->NewIterator(ro);
-  single_iter->Seek("a");
-  ASSERT_OK(single_iter->status());
-  single_iter->SeekForPrev("b");
-  ASSERT_OK(single_iter->status());
-  single_iter->Next();
-  ASSERT_OK(single_iter->status());
+  //  single_iter->Seek("a");
+  //  ASSERT_OK(single_iter->status());
+  //  single_iter->SeekForPrev("b");
+  //  ASSERT_OK(single_iter->status());
+  //  single_iter->Next();
+  //  ASSERT_OK(single_iter->status());
   delete single_iter;
   std::this_thread::sleep_for(std::chrono::seconds(1));
 

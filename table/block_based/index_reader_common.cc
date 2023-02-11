@@ -8,6 +8,8 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 #include "table/block_based/index_reader_common.h"
 
+#include "logging/logging.h"
+
 namespace ROCKSDB_NAMESPACE {
 Status BlockBasedTable::IndexReaderCommon::ReadIndexBlock(
     const BlockBasedTable* table, FilePrefetchBuffer* prefetch_buffer,
@@ -28,6 +30,10 @@ Status BlockBasedTable::IndexReaderCommon::ReadIndexBlock(
       UncompressionDict::GetEmptyDict(), index_block, BlockType::kIndex,
       get_context, lookup_context, /* for_compaction */ false, use_cache,
       /* wait_for_cache */ true, /* async_read */ false);
+  ROCKS_LOG_INFO(rep->ioptions.info_log,
+                 "BlockBasedTable::IndexReaderCommon::ReadIndexBlock, Caller: "
+                 "%u, Iterator ID: %llu",
+                 lookup_context->caller, lookup_context->iter_id);
 
   return s;
 }
