@@ -316,7 +316,7 @@ Status PartitionedFilterBlockReader::GetFilterPartitionBlock(
                              BlockType::kFilter, get_context, lookup_context,
                              /* for_compaction */ false, /* use_cache */ true,
                              /* wait_for_cache */ true, /* async_read */ false);
-      lookup_context->caller, uint32_t(lookup_context->iter_id));
+  lookup_context->caller, uint32_t(lookup_context->iter_id);
   return s;
 }
 
