@@ -61,11 +61,6 @@ TBlockIter* BlockBasedTable::NewDataBlockIterator(
         /* use_cache */ true, /* wait_for_cache */ true, async_read);
   }
 
-  ROCKS_LOG_INFO(rep_->ioptions.info_log,
-                 "Tracing in BlockBasedTable::NewDataBlockIterator, Caller: "
-                 "%u, Iterator ID: %u",
-                 lookup_context->caller, uint32_t(lookup_context->iter_id));
-
   if (s.IsTryAgain() && async_read) {
     return iter;
   }

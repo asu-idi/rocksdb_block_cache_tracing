@@ -58,12 +58,6 @@ DEFINE_SYNC_AND_ASYNC(void, BlockBasedTable::RetrieveMultipleBlocks)
                         mget_iter->get_context, &lookup_data_block_context,
                         /* for_compaction */ false, /* use_cache */ true,
                         /* wait_for_cache */ true, /* async_read */ false);
-      ROCKS_LOG_INFO(rep_->ioptions.info_log,
-                     "DEFINE_SYNC_AND_ASYNC(void, "
-                     "BlockBasedTable::RetrieveMultipleBlocks), Caller: "
-                     "%u, Iterator ID: %u",
-                     lookup_data_block_context.caller,
-                     uint32_t(lookup_data_block_context.iter_id));
     }
     CO_RETURN;
   }
@@ -451,12 +445,6 @@ DEFINE_SYNC_AND_ASYNC(void, BlockBasedTable::MultiGet)
             miter->get_context, &lookup_data_block_context,
             /* for_compaction */ false, /* use_cache */ true,
             /* wait_for_cache */ false, /* async_read */ false);
-        ROCKS_LOG_INFO(
-            rep_->ioptions.info_log,
-            "DEFINE_SYNC_AND_ASYNC(void, BlockBasedTable::MultiGet), Caller: "
-            "%u, Iterator ID: %u",
-            lookup_data_block_context.caller,
-            uint32_t(lookup_data_block_context.iter_id));
         if (s.IsIncomplete()) {
           s = Status::OK();
         }

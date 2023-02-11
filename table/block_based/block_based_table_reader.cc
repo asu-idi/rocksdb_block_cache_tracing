@@ -970,6 +970,10 @@ Status BlockBasedTable::ReadRangeDelBlock(
         /*input_iter=*/nullptr, BlockType::kRangeDeletion,
         /*get_context=*/nullptr, lookup_context, prefetch_buffer,
         /*for_compaction= */ false, /*async_read= */ false, tmp_status));
+    ROCKS_LOG_INFO(rep_->ioptions.info_log,
+                   "Tracing in BlockBasedTable::ReadRangeDelBlock, "
+                   "Caller: %u, Iterator ID: %u",
+                   lookup_context->caller, uint32_t(lookup_context->iter_id));
     assert(iter != nullptr);
     s = iter->status();
     if (!s.ok()) {

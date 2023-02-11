@@ -316,10 +316,6 @@ Status PartitionedFilterBlockReader::GetFilterPartitionBlock(
                              BlockType::kFilter, get_context, lookup_context,
                              /* for_compaction */ false, /* use_cache */ true,
                              /* wait_for_cache */ true, /* async_read */ false);
-  ROCKS_LOG_INFO(
-      table()->get_rep()->ioptions.info_log,
-      "PartitionedFilterBlockReader::GetFilterPartitionBlock, Caller: "
-      "%u, Iterator ID: %u",
       lookup_context->caller, uint32_t(lookup_context->iter_id));
   return s;
 }
