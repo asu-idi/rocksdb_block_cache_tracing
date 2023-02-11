@@ -50,15 +50,31 @@ TBlockIter* BlockBasedTable::NewDataBlockIterator(
     const UncompressionDict& dict = uncompression_dict.GetValue()
                                         ? *uncompression_dict.GetValue()
                                         : UncompressionDict::GetEmptyDict();
+    ROCKS_LOG_INFO(rep_->ioptions.info_log,
+                   "Before RetrieveBlock 1, "
+                   "Caller: %u, Iterator ID: %u",
+                   lookup_context->caller, uint32_t(lookup_context->iter_id));
     s = RetrieveBlock(prefetch_buffer, ro, handle, dict, &block, block_type,
                       get_context, lookup_context, for_compaction,
                       /* use_cache */ true, /* wait_for_cache */ true,
                       async_read);
+    ROCKS_LOG_INFO(rep_->ioptions.info_log,
+                   "After RetrieveBlock 1, "
+                   "Caller: %u, Iterator ID: %u",
+                   lookup_context->caller, uint32_t(lookup_context->iter_id));
   } else {
+    ROCKS_LOG_INFO(rep_->ioptions.info_log,
+                   "Before RetrieveBlock 2, "
+                   "Caller: %u, Iterator ID: %u",
+                   lookup_context->caller, uint32_t(lookup_context->iter_id));
     s = RetrieveBlock(
         prefetch_buffer, ro, handle, UncompressionDict::GetEmptyDict(), &block,
         block_type, get_context, lookup_context, for_compaction,
         /* use_cache */ true, /* wait_for_cache */ true, async_read);
+    ROCKS_LOG_INFO(rep_->ioptions.info_log,
+                   "After RetrieveBlock 2, "
+                   "Caller: %u, Iterator ID: %u",
+                   lookup_context->caller, uint32_t(lookup_context->iter_id));
   }
 
   if (s.IsTryAgain() && async_read) {
