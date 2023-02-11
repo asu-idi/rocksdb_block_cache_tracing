@@ -32,8 +32,8 @@ Status BlockBasedTable::IndexReaderCommon::ReadIndexBlock(
       /* wait_for_cache */ true, /* async_read */ false);
   ROCKS_LOG_INFO(rep->ioptions.info_log,
                  "BlockBasedTable::IndexReaderCommon::ReadIndexBlock, Caller: "
-                 "%u, Iterator ID: %llu",
-                 lookup_context->caller, lookup_context->iter_id);
+                 "%u, Iterator ID: %u",
+                 lookup_context->caller, uint32_t(lookup_context->iter_id));
 
   return s;
 }

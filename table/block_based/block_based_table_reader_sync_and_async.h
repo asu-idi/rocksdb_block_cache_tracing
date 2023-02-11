@@ -61,9 +61,9 @@ DEFINE_SYNC_AND_ASYNC(void, BlockBasedTable::RetrieveMultipleBlocks)
       ROCKS_LOG_INFO(rep_->ioptions.info_log,
                      "DEFINE_SYNC_AND_ASYNC(void, "
                      "BlockBasedTable::RetrieveMultipleBlocks), Caller: "
-                     "%u, Iterator ID: %llu",
+                     "%u, Iterator ID: %u",
                      lookup_data_block_context.caller,
-                     lookup_data_block_context.iter_id);
+                     uint32_t(lookup_data_block_context.iter_id));
     }
     CO_RETURN;
   }
@@ -454,9 +454,9 @@ DEFINE_SYNC_AND_ASYNC(void, BlockBasedTable::MultiGet)
         ROCKS_LOG_INFO(
             rep_->ioptions.info_log,
             "DEFINE_SYNC_AND_ASYNC(void, BlockBasedTable::MultiGet), Caller: "
-            "%u, Iterator ID: %llu",
+            "%u, Iterator ID: %u",
             lookup_data_block_context.caller,
-            lookup_data_block_context.iter_id);
+            uint32_t(lookup_data_block_context.iter_id));
         if (s.IsIncomplete()) {
           s = Status::OK();
         }

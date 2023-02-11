@@ -67,8 +67,8 @@ Status UncompressionDictReader::ReadUncompressionDictionary(
   ROCKS_LOG_INFO(
       rep->ioptions.info_log,
       "UncompressionDictReader::ReadUncompressionDictionary, Caller: "
-      "%u, Iterator ID: %llu",
-      lookup_context->caller, lookup_context->iter_id);
+      "%u, Iterator ID: %u",
+      lookup_context->caller, uint32_t(lookup_context->iter_id));
 
   if (!s.ok()) {
     ROCKS_LOG_WARN(

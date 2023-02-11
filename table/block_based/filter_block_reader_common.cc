@@ -37,8 +37,8 @@ Status FilterBlockReaderCommon<TBlocklike>::ReadFilterBlock(
   ROCKS_LOG_INFO(
       rep->ioptions.info_log,
       "FilterBlockReaderCommon<TBlocklike>::ReadFilterBlock, Caller: "
-      "%u, Iterator ID: %llu",
-      lookup_context->caller, lookup_context->iter_id);
+      "%u, Iterator ID: %u",
+      lookup_context->caller, uint32_t(lookup_context->iter_id));
   return s;
 }
 
