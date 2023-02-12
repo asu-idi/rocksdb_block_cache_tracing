@@ -94,6 +94,11 @@ void PartitionedIndexIterator::InitPartitionedIndexBlock() {
         is_for_compaction, /*no_sequential_checking=*/false,
         read_options_.rate_limiter_priority);
     Status s;
+    ROCKS_LOG_INFO(
+        rep->ioptions.info_log,
+        "Tracing in PartitionedIndexIterator::InitPartitionedIndexBlock, "
+        "Caller: %u, Iterator ID: %u",
+        lookup_context_.caller, uint32_t(lookup_context_.iter_id));
     table_->NewDataBlockIterator<IndexBlockIter>(
         read_options_, partitioned_index_handle, &block_iter_,
         BlockType::kIndex,

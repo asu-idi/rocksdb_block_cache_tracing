@@ -260,6 +260,10 @@ void BlockBasedTableIterator::InitDataBlock() {
         rep, data_block_handle, read_options_.readahead_size, is_for_compaction,
         /*no_sequential_checking=*/false, read_options_.rate_limiter_priority);
     Status s;
+    ROCKS_LOG_INFO(rep->ioptions.info_log,
+                   "Tracing in BlockBasedTableIterator::InitDataBlock(), "
+                   "Caller: %u, Iterator ID: %u",
+                   lookup_context_.caller, uint32_t(lookup_context_.iter_id));
     table_->NewDataBlockIterator<DataBlockIter>(
         read_options_, data_block_handle, &block_iter_, BlockType::kData,
         /*get_context=*/nullptr, &lookup_context_,
@@ -298,6 +302,11 @@ void BlockBasedTableIterator::AsyncInitDataBlock(bool is_first_pass) {
           read_options_.rate_limiter_priority);
 
       Status s;
+      ROCKS_LOG_INFO(
+          rep->ioptions.info_log,
+          "Tracing in BlockBasedTableIterator::AsyncInitDataBlock 1, "
+          "Caller: %u, Iterator ID: %u",
+          lookup_context_.caller, uint32_t(lookup_context_.iter_id));
       table_->NewDataBlockIterator<DataBlockIter>(
           read_options_, data_block_handle, &block_iter_, BlockType::kData,
           /*get_context=*/nullptr, &lookup_context_,
@@ -313,6 +322,10 @@ void BlockBasedTableIterator::AsyncInitDataBlock(bool is_first_pass) {
     // Second pass will call the Poll to get the data block which has been
     // requested asynchronously.
     Status s;
+    ROCKS_LOG_INFO(table_->get_rep()->ioptions.info_log,
+                   "Tracing in BlockBasedTableIterator::AsyncInitDataBlock 2, "
+                   "Caller: %u, Iterator ID: %u",
+                   lookup_context_.caller, uint32_t(lookup_context_.iter_id));
     table_->NewDataBlockIterator<DataBlockIter>(
         read_options_, data_block_handle, &block_iter_, BlockType::kData,
         /*get_context=*/nullptr, &lookup_context_,
