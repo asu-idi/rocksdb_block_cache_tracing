@@ -18,6 +18,10 @@ void BlockBasedTableIterator::Seek(const Slice& target) {
 
 void BlockBasedTableIterator::SeekImpl(const Slice* target,
                                        bool async_prefetch) {
+  ROCKS_LOG_INFO(
+      table_->get_rep()->ioptions.logger,
+      "Tracing in BlockBasedTableIterator::SeekImpl, Iterator ID: %u",
+      uint32_t(tracing_iter_id_));
   bool is_first_pass = true;
   lookup_context_.iter_id = tracing_iter_id_;
   if (async_read_in_progress_) {
@@ -124,6 +128,10 @@ void BlockBasedTableIterator::SeekImpl(const Slice* target,
 }
 
 void BlockBasedTableIterator::SeekForPrev(const Slice& target) {
+  ROCKS_LOG_INFO(
+      table_->get_rep()->ioptions.logger,
+      "Tracing in BlockBasedTableIterator::SeekForPrev, Iterator ID: %u",
+      uint32_t(tracing_iter_id_));
   is_out_of_bound_ = false;
   is_at_first_key_from_index_ = false;
   // For now totally disable prefix seek in auto prefix mode because we don't
@@ -184,6 +192,10 @@ void BlockBasedTableIterator::SeekForPrev(const Slice& target) {
 }
 
 void BlockBasedTableIterator::SeekToLast() {
+  ROCKS_LOG_INFO(
+      table_->get_rep()->ioptions.logger,
+      "Tracing in BlockBasedTableIterator::SeekToLast, Iterator ID: %u",
+      uint32_t(tracing_iter_id_));
   is_out_of_bound_ = false;
   is_at_first_key_from_index_ = false;
   SavePrevIndexValue();
@@ -220,6 +232,9 @@ bool BlockBasedTableIterator::NextAndGetResult(IterateResult* result) {
 }
 
 void BlockBasedTableIterator::Prev() {
+  ROCKS_LOG_INFO(table_->get_rep()->ioptions.logger,
+                 "Tracing in BlockBasedTableIterator::Prev, Iterator ID: %u",
+                 uint32_t(tracing_iter_id_));
   if (is_at_first_key_from_index_) {
     is_at_first_key_from_index_ = false;
 
@@ -260,10 +275,6 @@ void BlockBasedTableIterator::InitDataBlock() {
         rep, data_block_handle, read_options_.readahead_size, is_for_compaction,
         /*no_sequential_checking=*/false, read_options_.rate_limiter_priority);
     Status s;
-    ROCKS_LOG_INFO(rep->ioptions.info_log,
-                   "Tracing in BlockBasedTableIterator::InitDataBlock(), "
-                   "Caller: %u, Iterator ID: %u",
-                   lookup_context_.caller, uint32_t(lookup_context_.iter_id));
     table_->NewDataBlockIterator<DataBlockIter>(
         read_options_, data_block_handle, &block_iter_, BlockType::kData,
         /*get_context=*/nullptr, &lookup_context_,
@@ -302,11 +313,6 @@ void BlockBasedTableIterator::AsyncInitDataBlock(bool is_first_pass) {
           read_options_.rate_limiter_priority);
 
       Status s;
-      ROCKS_LOG_INFO(
-          rep->ioptions.info_log,
-          "Tracing in BlockBasedTableIterator::AsyncInitDataBlock 1, "
-          "Caller: %u, Iterator ID: %u",
-          lookup_context_.caller, uint32_t(lookup_context_.iter_id));
       table_->NewDataBlockIterator<DataBlockIter>(
           read_options_, data_block_handle, &block_iter_, BlockType::kData,
           /*get_context=*/nullptr, &lookup_context_,
@@ -322,10 +328,6 @@ void BlockBasedTableIterator::AsyncInitDataBlock(bool is_first_pass) {
     // Second pass will call the Poll to get the data block which has been
     // requested asynchronously.
     Status s;
-    ROCKS_LOG_INFO(table_->get_rep()->ioptions.info_log,
-                   "Tracing in BlockBasedTableIterator::AsyncInitDataBlock 2, "
-                   "Caller: %u, Iterator ID: %u",
-                   lookup_context_.caller, uint32_t(lookup_context_.iter_id));
     table_->NewDataBlockIterator<DataBlockIter>(
         read_options_, data_block_handle, &block_iter_, BlockType::kData,
         /*get_context=*/nullptr, &lookup_context_,
@@ -343,6 +345,10 @@ bool BlockBasedTableIterator::MaterializeCurrentBlock() {
   assert(index_iter_->Valid());
 
   is_at_first_key_from_index_ = false;
+  ROCKS_LOG_INFO(table_->get_rep()->ioptions.logger,
+                 "Tracing in BlockBasedTableIterator::MaterializeCurrentBlock, "
+                 "Iterator ID: %u",
+                 uint32_t(tracing_iter_id_));
   InitDataBlock();
   assert(block_iter_points_to_real_block_);
 
@@ -381,6 +387,10 @@ void BlockBasedTableIterator::FindKeyForward() {
 }
 
 void BlockBasedTableIterator::FindBlockForward() {
+  ROCKS_LOG_INFO(
+      table_->get_rep()->ioptions.logger,
+      "Tracing in BlockBasedTableIterator::FindBlockForward, Iterator ID: %u",
+      uint32_t(tracing_iter_id_));
   // TODO the while loop inherits from two-level-iterator. We don't know
   // whether a block can be empty so it can be replaced by an "if".
   do {
@@ -437,6 +447,10 @@ void BlockBasedTableIterator::FindKeyBackward() {
     index_iter_->Prev();
 
     if (index_iter_->Valid()) {
+      ROCKS_LOG_INFO(table_->get_rep()->ioptions.logger,
+                     "Tracing in BlockBasedTableIterator::FindKeyBackward, "
+                     "Iterator ID: %u",
+                     uint32_t(tracing_iter_id_));
       InitDataBlock();
       block_iter_.SeekToLast();
     } else {
