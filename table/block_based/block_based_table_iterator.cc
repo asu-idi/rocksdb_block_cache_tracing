@@ -128,10 +128,6 @@ void BlockBasedTableIterator::SeekImpl(const Slice* target,
 }
 
 void BlockBasedTableIterator::SeekForPrev(const Slice& target) {
-  ROCKS_LOG_INFO(
-      table_->get_rep()->ioptions.logger,
-      "Tracing in BlockBasedTableIterator::SeekForPrev, Iterator ID: %u",
-      uint32_t(tracing_iter_id_));
   is_out_of_bound_ = false;
   is_at_first_key_from_index_ = false;
   // For now totally disable prefix seek in auto prefix mode because we don't
@@ -192,10 +188,6 @@ void BlockBasedTableIterator::SeekForPrev(const Slice& target) {
 }
 
 void BlockBasedTableIterator::SeekToLast() {
-  ROCKS_LOG_INFO(
-      table_->get_rep()->ioptions.logger,
-      "Tracing in BlockBasedTableIterator::SeekToLast, Iterator ID: %u",
-      uint32_t(tracing_iter_id_));
   is_out_of_bound_ = false;
   is_at_first_key_from_index_ = false;
   SavePrevIndexValue();
@@ -211,6 +203,10 @@ void BlockBasedTableIterator::SeekToLast() {
 }
 
 void BlockBasedTableIterator::Next() {
+  lookup_context_.iter_id = tracing_iter_id_;
+  ROCKS_LOG_INFO(table_->get_rep()->ioptions.logger,
+                 "Tracing in BlockBasedTableIterator::Next, Iterator ID: %u",
+                 uint32_t(tracing_iter_id_));
   if (is_at_first_key_from_index_ && !MaterializeCurrentBlock()) {
     return;
   }
@@ -232,9 +228,6 @@ bool BlockBasedTableIterator::NextAndGetResult(IterateResult* result) {
 }
 
 void BlockBasedTableIterator::Prev() {
-  ROCKS_LOG_INFO(table_->get_rep()->ioptions.logger,
-                 "Tracing in BlockBasedTableIterator::Prev, Iterator ID: %u",
-                 uint32_t(tracing_iter_id_));
   if (is_at_first_key_from_index_) {
     is_at_first_key_from_index_ = false;
 
@@ -345,10 +338,6 @@ bool BlockBasedTableIterator::MaterializeCurrentBlock() {
   assert(index_iter_->Valid());
 
   is_at_first_key_from_index_ = false;
-  ROCKS_LOG_INFO(table_->get_rep()->ioptions.logger,
-                 "Tracing in BlockBasedTableIterator::MaterializeCurrentBlock, "
-                 "Iterator ID: %u",
-                 uint32_t(tracing_iter_id_));
   InitDataBlock();
   assert(block_iter_points_to_real_block_);
 
@@ -387,10 +376,6 @@ void BlockBasedTableIterator::FindKeyForward() {
 }
 
 void BlockBasedTableIterator::FindBlockForward() {
-  ROCKS_LOG_INFO(
-      table_->get_rep()->ioptions.logger,
-      "Tracing in BlockBasedTableIterator::FindBlockForward, Iterator ID: %u",
-      uint32_t(tracing_iter_id_));
   // TODO the while loop inherits from two-level-iterator. We don't know
   // whether a block can be empty so it can be replaced by an "if".
   do {
@@ -447,10 +432,6 @@ void BlockBasedTableIterator::FindKeyBackward() {
     index_iter_->Prev();
 
     if (index_iter_->Valid()) {
-      ROCKS_LOG_INFO(table_->get_rep()->ioptions.logger,
-                     "Tracing in BlockBasedTableIterator::FindKeyBackward, "
-                     "Iterator ID: %u",
-                     uint32_t(tracing_iter_id_));
       InitDataBlock();
       block_iter_.SeekToLast();
     } else {

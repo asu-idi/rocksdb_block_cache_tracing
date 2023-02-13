@@ -128,7 +128,7 @@ class ForwardLevelIterator : public InternalIterator {
       assert(!valid_);
       return;
     }
-
+    file_iter_->SetTracingIterId(tracing_iter_id_);
     file_iter_->Seek(internal_key);
     valid_ = file_iter_->Valid();
   }
