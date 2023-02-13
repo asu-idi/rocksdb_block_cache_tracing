@@ -17,6 +17,7 @@
 #include "db/job_context.h"
 #include "db/range_del_aggregator.h"
 #include "db/range_tombstone_fragmenter.h"
+#include "logging/logging.h"
 #include "rocksdb/env.h"
 #include "rocksdb/slice.h"
 #include "rocksdb/slice_transform.h"
@@ -117,6 +118,9 @@ class ForwardLevelIterator : public InternalIterator {
     valid_ = file_iter_->Valid();
   }
   void Seek(const Slice& internal_key) override {
+    ROCKS_LOG_INFO(cfd_->ioptions()->info_log,
+                   "ForwardLevelIterator::Seek, Iterator ID: %u",
+                   uint32_t(tracing_iter_id_));
     assert(file_iter_ != nullptr);
 
     // This deviates from the usual convention for InternalIterator::Seek() in
@@ -362,6 +366,9 @@ bool ForwardIterator::IsOverUpperBound(const Slice& internal_key) const {
 }
 
 void ForwardIterator::Seek(const Slice& internal_key) {
+  ROCKS_LOG_INFO(cfd_->ioptions()->info_log,
+                 "ForwardIterator::Seek, Iterator ID: %u",
+                 uint32_t(tracing_iter_id_));
   if (sv_ == nullptr) {
     RebuildIterators(true);
   } else if (sv_->version_number != cfd_->GetSuperVersionNumber()) {
