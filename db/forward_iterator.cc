@@ -118,9 +118,6 @@ class ForwardLevelIterator : public InternalIterator {
     valid_ = file_iter_->Valid();
   }
   void Seek(const Slice& internal_key) override {
-    ROCKS_LOG_INFO(cfd_->ioptions()->info_log,
-                   "ForwardLevelIterator::Seek, Iterator ID: %u",
-                   uint32_t(tracing_iter_id_));
     assert(file_iter_ != nullptr);
 
     // This deviates from the usual convention for InternalIterator::Seek() in
@@ -366,9 +363,6 @@ bool ForwardIterator::IsOverUpperBound(const Slice& internal_key) const {
 }
 
 void ForwardIterator::Seek(const Slice& internal_key) {
-  ROCKS_LOG_INFO(cfd_->ioptions()->info_log,
-                 "ForwardIterator::Seek, Iterator ID: %u",
-                 uint32_t(tracing_iter_id_));
   if (sv_ == nullptr) {
     RebuildIterators(true);
   } else if (sv_->version_number != cfd_->GetSuperVersionNumber()) {
@@ -388,6 +382,9 @@ void ForwardIterator::Seek(const Slice& internal_key) {
 void ForwardIterator::SeekInternal(const Slice& internal_key,
                                    bool seek_to_first,
                                    bool seek_after_async_io) {
+  ROCKS_LOG_INFO(cfd_->ioptions()->info_log,
+                 "ForwardIterator::SeekInternal, Iterator ID: %u",
+                 uint32_t(tracing_iter_id_));
   assert(mutable_iter_);
   // mutable
   if (!seek_after_async_io) {
@@ -551,6 +548,9 @@ void ForwardIterator::SeekInternal(const Slice& internal_key,
 }
 
 void ForwardIterator::Next() {
+  ROCKS_LOG_INFO(cfd_->ioptions()->info_log,
+                 "ForwardIterator::Next, Iterator ID: %u",
+                 uint32_t(tracing_iter_id_));
   assert(valid_);
   bool update_prev_key = false;
 
