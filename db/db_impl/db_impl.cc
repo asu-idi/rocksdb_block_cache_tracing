@@ -556,6 +556,7 @@ Status DBImpl::MaybeReleaseTimestampedSnapshotsAndCheck() {
 Status DBImpl::CloseHelper() {
   // Guarantee that there is no background error recovery in progress before
   // continuing with the shutdown
+
   mutex_.Lock();
   shutdown_initiated_ = true;
   error_handler_.CancelErrorRecovery();
@@ -1988,11 +1989,18 @@ Status DBImpl::GetImpl(const ReadOptions& read_options, const Slice& key,
     if (tracer_.get() == nullptr) {
       TraceOptions query_trace_options;
       TraceOptions block_trace_options;
-      query_trace_options.max_trace_file_size = 1024;
-      std::string query_trace_filename =
-          "/tmp/trace/trace." + std::to_string(env_->NowMicros());
-      std::string block_trace_filename =
-          "/tmp/trace/block_cache_trace." + std::to_string(env_->NowMicros());
+      std::string processed_dbname = dbname_;
+      for (auto& c : processed_dbname) {
+        if (c == '/') {
+          c = '_';
+        }
+      }
+      std::string query_trace_filename = "/tmp/trace/trace" + processed_dbname +
+                                         '.' +
+                                         std::to_string(env_->NowMicros());
+      std::string block_trace_filename = "/tmp/trace/block_cache_trace" +
+                                         processed_dbname + '.' +
+                                         std::to_string(env_->NowMicros());
       EnvOptions env_opts;
       std::unique_ptr<TraceWriter> query_trace_writer;
       std::unique_ptr<TraceWriter> block_trace_writer;
@@ -2307,16 +2315,28 @@ std::vector<Status> DBImpl::MultiGet(
     return stat_list;
   }
 
+  if (keys.empty()) {
+    ROCKS_LOG_INFO(immutable_db_options_.info_log,
+                   "MultiGet with empty key list");
+  }
+
   if (tracer_.get() == nullptr) {
     InstrumentedMutexLock lock(&trace_mutex_);
     if (tracer_.get() == nullptr) {
       TraceOptions query_trace_options;
       TraceOptions block_trace_options;
-      query_trace_options.max_trace_file_size = 1024;
-      std::string query_trace_filename =
-          "/tmp/trace/trace." + std::to_string(env_->NowMicros());
-      std::string block_trace_filename =
-          "/tmp/trace/block_cache_trace." + std::to_string(env_->NowMicros());
+      std::string processed_dbname = dbname_;
+      for (auto& c : processed_dbname) {
+        if (c == '/') {
+          c = '_';
+        }
+      }
+      std::string query_trace_filename = "/tmp/trace/trace" + processed_dbname +
+                                         '.' +
+                                         std::to_string(env_->NowMicros());
+      std::string block_trace_filename = "/tmp/trace/block_cache_trace" +
+                                         processed_dbname + '.' +
+                                         std::to_string(env_->NowMicros());
       EnvOptions env_opts;
       std::unique_ptr<TraceWriter> query_trace_writer;
       std::unique_ptr<TraceWriter> block_trace_writer;
@@ -2662,11 +2682,18 @@ void DBImpl::MultiGet(const ReadOptions& read_options, const size_t num_keys,
     if (tracer_.get() == nullptr) {
       TraceOptions query_trace_options;
       TraceOptions block_trace_options;
-      query_trace_options.max_trace_file_size = 1024;
-      std::string query_trace_filename =
-          "/tmp/trace/trace." + std::to_string(env_->NowMicros());
-      std::string block_trace_filename =
-          "/tmp/trace/block_cache_trace." + std::to_string(env_->NowMicros());
+      std::string processed_dbname = dbname_;
+      for (auto& c : processed_dbname) {
+        if (c == '/') {
+          c = '_';
+        }
+      }
+      std::string query_trace_filename = "/tmp/trace/trace" + processed_dbname +
+                                         '.' +
+                                         std::to_string(env_->NowMicros());
+      std::string block_trace_filename = "/tmp/trace/block_cache_trace" +
+                                         processed_dbname + '.' +
+                                         std::to_string(env_->NowMicros());
       EnvOptions env_opts;
       std::unique_ptr<TraceWriter> query_trace_writer;
       std::unique_ptr<TraceWriter> block_trace_writer;
@@ -5834,6 +5861,13 @@ Status DBImpl::EndTrace() {
   } else {
     s = Status::IOError("No trace file to close");
   }
+  if (!s.ok()) {
+    ROCKS_LOG_INFO(immutable_db_options_.info_log, "Failed to end trace: %s",
+                   s.ToString().c_str());
+  } else {
+    ROCKS_LOG_INFO(immutable_db_options_.info_log, "Succeeded to end trace: %s",
+                   s.ToString().c_str());
+  }
   return s;
 }
 
@@ -5870,17 +5904,54 @@ Status DBImpl::StartBlockCacheTrace(
 
 Status DBImpl::EndBlockCacheTrace() {
   block_cache_tracer_.EndTrace();
+  ROCKS_LOG_INFO(immutable_db_options_.info_log,
+                 "Succeeded to end block cache trace");
   return Status::OK();
 }
 
 Status DBImpl::TraceIteratorSeek(const uint32_t& cf_id, const Slice& key,
                                  const Slice& lower_bound,
-                                 const Slice upper_bound) {
+                                 const Slice upper_bound,
+                                 const uint64_t& tracing_iter_id) {
   Status s;
+  if (tracer_.get() == nullptr) {
+    InstrumentedMutexLock lock(&trace_mutex_);
+    if (tracer_.get() == nullptr) {
+      TraceOptions query_trace_options;
+      TraceOptions block_trace_options;
+      std::string processed_dbname = dbname_;
+      for (auto& c : processed_dbname) {
+        if (c == '/') {
+          c = '_';
+        }
+      }
+      std::string query_trace_filename = "/tmp/trace/trace" + processed_dbname +
+                                         '.' +
+                                         std::to_string(env_->NowMicros());
+      std::string block_trace_filename = "/tmp/trace/block_cache_trace" +
+                                         processed_dbname + '.' +
+                                         std::to_string(env_->NowMicros());
+      EnvOptions env_opts;
+      std::unique_ptr<TraceWriter> query_trace_writer;
+      std::unique_ptr<TraceWriter> block_trace_writer;
+      NewFileTraceWriter(env_, env_opts, query_trace_filename,
+                         &query_trace_writer);
+      tracer_.reset(new Tracer(GetSystemClock(), query_trace_options,
+                               std::move(query_trace_writer)));
+      NewFileTraceWriter(env_, env_opts, block_trace_filename,
+                         &block_trace_writer);
+      StartBlockCacheTrace(block_trace_options, std::move(block_trace_writer));
+    }
+  }
+
   if (tracer_) {
     InstrumentedMutexLock lock(&trace_mutex_);
     if (tracer_) {
-      s = tracer_->IteratorSeek(cf_id, key, lower_bound, upper_bound);
+      ROCKS_LOG_INFO(immutable_db_options_.info_log,
+                     "TraceIteratorSeek: tracing_iter_id %" PRIu64,
+                     tracing_iter_id);
+      s = tracer_->IteratorSeek(cf_id, key, lower_bound, upper_bound,
+                                tracing_iter_id);
     }
   }
   return s;
@@ -5888,23 +5959,31 @@ Status DBImpl::TraceIteratorSeek(const uint32_t& cf_id, const Slice& key,
 
 Status DBImpl::TraceIteratorSeekForPrev(const uint32_t& cf_id, const Slice& key,
                                         const Slice& lower_bound,
-                                        const Slice upper_bound) {
+                                        const Slice upper_bound,
+                                        const uint64_t& tracing_iter_id) {
   Status s;
   if (tracer_) {
     InstrumentedMutexLock lock(&trace_mutex_);
     if (tracer_) {
-      s = tracer_->IteratorSeekForPrev(cf_id, key, lower_bound, upper_bound);
+      ROCKS_LOG_INFO(immutable_db_options_.info_log,
+                     "TraceIteratorSeekForPrev: tracing_iter_id %" PRIu64,
+                     tracing_iter_id);
+      s = tracer_->IteratorSeekForPrev(cf_id, key, lower_bound, upper_bound,
+                                       tracing_iter_id);
     }
   }
   return s;
 }
 
-Status DBImpl::TraceIteratorNext(const uint64_t& trace_iter_uid) {
+Status DBImpl::TraceIteratorNext(const uint64_t& tracing_iter_id) {
   Status s;
   if (tracer_) {
     InstrumentedMutexLock lock(&trace_mutex_);
     if (tracer_) {
-      s = tracer_->IteratorNext(trace_iter_uid);
+      ROCKS_LOG_INFO(immutable_db_options_.info_log,
+                     "TraceIteratorNext: tracing_iter_id %" PRIu64,
+                     tracing_iter_id);
+      s = tracer_->IteratorNext(tracing_iter_id);
     }
   }
   return s;

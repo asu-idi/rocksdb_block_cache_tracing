@@ -59,6 +59,8 @@ struct BlockCacheTraceRecord {
   // 1. A unique ID for Get/MultiGet
   uint64_t get_id = kReservedGetId;
 
+  uint64_t iter_id = 0;
+
   // 2. Whether the Get/MultiGet is from a user-specified snapshot
   bool get_from_user_specified_snapshot = false;
 
@@ -85,6 +87,7 @@ struct BlockCacheTraceRecord {
                         uint64_t _cf_id, std::string _cf_name, uint32_t _level,
                         uint64_t _sst_fd_number, TableReaderCaller _caller,
                         bool _is_cache_hit, bool _no_insert, uint64_t _get_id,
+                        uint64_t _iter_id,
                         bool _get_from_user_specified_snapshot = false,
                         std::string _referenced_key = "",
                         uint64_t _referenced_data_size = 0,
@@ -102,6 +105,7 @@ struct BlockCacheTraceRecord {
         is_cache_hit(_is_cache_hit),
         no_insert(_no_insert),
         get_id(_get_id),
+        iter_id(_iter_id),
         get_from_user_specified_snapshot(_get_from_user_specified_snapshot),
         referenced_key(_referenced_key),
         referenced_data_size(_referenced_data_size),

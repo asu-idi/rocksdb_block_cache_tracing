@@ -143,6 +143,7 @@ else()
     add_definitions(-DSNAPPY)
     list(APPEND THIRDPARTY_LIBS Snappy::snappy)
   endif()
+  message(Snappy_FOUND)
 
   if(WITH_ZLIB)
     find_package(ZLIB REQUIRED)
@@ -1419,6 +1420,7 @@ if(WITH_TESTS)
         tools/reduce_levels_test.cc
         tools/sst_dump_test.cc
         tools/trace_analyzer_test.cc
+        tools/tracing_id_test.cc
         util/autovector_test.cc
         util/bloom_test.cc
         util/coding_test.cc

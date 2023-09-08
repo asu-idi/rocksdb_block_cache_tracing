@@ -79,7 +79,7 @@ DBIter::DBIter(Env* _env, const ReadOptions& read_options,
       arena_mode_(arena_mode),
       db_impl_(db_impl),
       cfd_(cfd),
-      trace_iter_uid_(0),
+      tracing_iter_id_(0),
       timestamp_ub_(read_options.timestamp),
       timestamp_lb_(read_options.iter_start_ts),
       timestamp_size_(timestamp_ub_ ? timestamp_ub_->size() : 0) {
@@ -135,8 +135,9 @@ void DBIter::Next() {
 #ifndef ROCKSDB_LITE
   if (db_impl_ != nullptr && cfd_ != nullptr) {
     // TODO: What do we do if this returns an error?
-    ResetIterUid();
-    db_impl_->TraceIteratorNext(trace_iter_uid_).PermitUncheckedError();
+
+    //    ResetTracingIterId();
+    db_impl_->TraceIteratorNext(tracing_iter_id_).PermitUncheckedError();
   }
 #endif  // ROCKSDB_LITE
 
@@ -1362,9 +1363,16 @@ bool DBIter::IsVisible(SequenceNumber sequence, const Slice& ts,
   return visible_by_seq && visible_by_ts;
 }
 
-void DBIter::ResetIterUid() {
-  trace_iter_uid_ = env_->NowMicros();
-  trace_iter_uid_ += reinterpret_cast<uintptr_t>(iter_.iter());
+void DBIter::ResetTracingIterId() {
+  //  tracing_iter_id_ = env_->NowMicros();
+  //  tracing_iter_id_ += reinterpret_cast<uint64_t>(iter_.iter());
+  InstrumentedMutexLock lock(&iter_id_mutex_);
+  tracing_iter_id_ =
+      env_->iter_counter.fetch_add(1, std::memory_order_relaxed) + 1;
+
+  iter_.iter()->SetTracingIterId(tracing_iter_id_);
+  ROCKS_LOG_INFO(logger_, "Resetting tracing iter id to %" PRIu64,
+                 tracing_iter_id_);
 }
 
 void DBIter::SetSavedKeyToSeekTarget(const Slice& target) {
@@ -1434,7 +1442,10 @@ void DBIter::Seek(const Slice& target) {
     } else {
       upper_bound = Slice("");
     }
-    db_impl_->TraceIteratorSeek(cfd_->GetID(), target, lower_bound, upper_bound)
+    ResetTracingIterId();
+    db_impl_
+        ->TraceIteratorSeek(cfd_->GetID(), target, lower_bound, upper_bound,
+                            tracing_iter_id_)
         .PermitUncheckedError();
   }
 #endif  // ROCKSDB_LITE
@@ -1509,9 +1520,10 @@ void DBIter::SeekForPrev(const Slice& target) {
     } else {
       upper_bound = Slice("");
     }
+    ResetTracingIterId();
     db_impl_
         ->TraceIteratorSeekForPrev(cfd_->GetID(), target, lower_bound,
-                                   upper_bound)
+                                   upper_bound, tracing_iter_id_)
         .PermitUncheckedError();
   }
 #endif  // ROCKSDB_LITE

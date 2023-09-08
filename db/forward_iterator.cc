@@ -17,6 +17,7 @@
 #include "db/job_context.h"
 #include "db/range_del_aggregator.h"
 #include "db/range_tombstone_fragmenter.h"
+#include "logging/logging.h"
 #include "rocksdb/env.h"
 #include "rocksdb/slice.h"
 #include "rocksdb/slice_transform.h"
@@ -128,7 +129,7 @@ class ForwardLevelIterator : public InternalIterator {
       assert(!valid_);
       return;
     }
-
+    file_iter_->SetTracingIterId(tracing_iter_id_);
     file_iter_->Seek(internal_key);
     valid_ = file_iter_->Valid();
   }
@@ -381,6 +382,9 @@ void ForwardIterator::Seek(const Slice& internal_key) {
 void ForwardIterator::SeekInternal(const Slice& internal_key,
                                    bool seek_to_first,
                                    bool seek_after_async_io) {
+  ROCKS_LOG_INFO(cfd_->ioptions()->info_log,
+                 "ForwardIterator::SeekInternal, Iterator ID: %u",
+                 uint32_t(tracing_iter_id_));
   assert(mutable_iter_);
   // mutable
   if (!seek_after_async_io) {
@@ -544,6 +548,9 @@ void ForwardIterator::SeekInternal(const Slice& internal_key,
 }
 
 void ForwardIterator::Next() {
+  ROCKS_LOG_INFO(cfd_->ioptions()->info_log,
+                 "ForwardIterator::Next, Iterator ID: %u",
+                 uint32_t(tracing_iter_id_));
   assert(valid_);
   bool update_prev_key = false;
 

@@ -92,10 +92,13 @@ TwoLevelIndexIterator::TwoLevelIndexIterator(
     : state_(state), first_level_iter_(first_level_iter) {}
 
 void TwoLevelIndexIterator::Seek(const Slice& target) {
+  first_level_iter_.iter()->SetTracingIterId(tracing_iter_id_);
+  second_level_iter_.iter()->SetTracingIterId(tracing_iter_id_);
   first_level_iter_.Seek(target);
 
   InitDataBlock();
   if (second_level_iter_.iter() != nullptr) {
+    second_level_iter_.iter()->SetTracingIterId(tracing_iter_id_);
     second_level_iter_.Seek(target);
   }
   SkipEmptyDataBlocksForward();

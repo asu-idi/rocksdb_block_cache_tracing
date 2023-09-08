@@ -18,7 +18,12 @@ void BlockBasedTableIterator::Seek(const Slice& target) {
 
 void BlockBasedTableIterator::SeekImpl(const Slice* target,
                                        bool async_prefetch) {
+  ROCKS_LOG_INFO(
+      table_->get_rep()->ioptions.logger,
+      "Tracing in BlockBasedTableIterator::SeekImpl, Iterator ID: %u",
+      uint32_t(tracing_iter_id_));
   bool is_first_pass = true;
+  lookup_context_.iter_id = tracing_iter_id_;
   if (async_read_in_progress_) {
     AsyncInitDataBlock(false);
     is_first_pass = false;
@@ -198,6 +203,10 @@ void BlockBasedTableIterator::SeekToLast() {
 }
 
 void BlockBasedTableIterator::Next() {
+  lookup_context_.iter_id = tracing_iter_id_;
+  ROCKS_LOG_INFO(table_->get_rep()->ioptions.logger,
+                 "Tracing in BlockBasedTableIterator::Next, Iterator ID: %u",
+                 uint32_t(tracing_iter_id_));
   if (is_at_first_key_from_index_ && !MaterializeCurrentBlock()) {
     return;
   }

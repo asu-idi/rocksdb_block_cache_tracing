@@ -356,6 +356,7 @@ class MergingIterator : public InternalIterator {
   void Seek(const Slice& target) override {
     assert(range_tombstone_iters_.empty() ||
            range_tombstone_iters_.size() == children_.size());
+    assert(tracing_iter_id_ != 0);
     SeekImpl(target);
     FindNextVisibleKey();
 
@@ -656,6 +657,7 @@ void MergingIterator::SeekImpl(const Slice& target, size_t starting_level,
   for (auto level = starting_level; level < children_.size(); ++level) {
     {
       PERF_TIMER_GUARD(seek_child_seek_time);
+      children_[level].iter.iter()->SetTracingIterId(tracing_iter_id_);
       children_[level].iter.Seek(current_search_key.GetInternalKey());
     }
 
@@ -734,6 +736,7 @@ void MergingIterator::SeekImpl(const Slice& target, size_t starting_level,
   if (range_tombstone_iters_.empty()) {
     for (auto& child : children_) {
       if (child.iter.status().IsTryAgain()) {
+        child.iter.iter()->SetTracingIterId(tracing_iter_id_);
         child.iter.Seek(target);
         {
           PERF_TIMER_GUARD(seek_min_heap_time);
@@ -745,6 +748,7 @@ void MergingIterator::SeekImpl(const Slice& target, size_t starting_level,
   } else {
     for (auto& prefetch : prefetched_target) {
       // (level, target) pairs
+      children_[prefetch.first].iter.iter()->SetTracingIterId(tracing_iter_id_);
       children_[prefetch.first].iter.Seek(prefetch.second);
       {
         PERF_TIMER_GUARD(seek_min_heap_time);

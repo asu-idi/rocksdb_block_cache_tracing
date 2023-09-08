@@ -175,14 +175,14 @@ std::map<std::string, int> taOptToIndex = {
     {"delete", 2},        {"single_delete", 3},
     {"range_delete", 4},  {"merge", 5},
     {"iterator_Seek", 6}, {"iterator_SeekForPrev", 7},
-    {"multiget", 8}};
+    {"multiget", 8},      {"iterator_Next", 9}};
 
 std::map<int, std::string> taIndexToOpt = {
     {0, "get"},           {1, "put"},
     {2, "delete"},        {3, "single_delete"},
     {4, "range_delete"},  {5, "merge"},
     {6, "iterator_Seek"}, {7, "iterator_SeekForPrev"},
-    {8, "multiget"}};
+    {8, "multiget"},      {9, "iterator_Next"}};
 
 namespace {
 
@@ -1543,9 +1543,9 @@ Status TraceAnalyzer::Handle(const IteratorSeekQueryTraceRecord& record,
 
   // To do: shall we add lower/upper bounds?
 
-  return OutputAnalysisResult(op_type, record.GetTimestamp(),
-                              record.GetColumnFamilyID(),
-                              std::move(record.GetKey()), 0);
+  return OutputAnalysisResult(
+      op_type, record.GetTimestamp(), record.GetColumnFamilyID(),
+      std::move(record.GetKey()), 0, record.GetTracingIterId());
 }
 
 Status TraceAnalyzer::Handle(const MultiGetQueryTraceRecord& record,
@@ -1579,10 +1579,10 @@ Status TraceAnalyzer::Handle(const IteratorNextQueryTraceRecord& record,
                              std::unique_ptr<TraceRecordResult>* /*result*/) {
   total_nexts_++;
 
-  uint64_t trace_iter_uid = record.GetTraceIterUid();
+  uint64_t tracing_iter_id = record.GetTracingIterId();
 
   return OutputAnalysisResult(TraceOperationType::kIteratorNext,
-                              record.GetTimestamp(), trace_iter_uid);
+                              record.GetTimestamp(), tracing_iter_id);
 }
 
 // Handle the Put request in the write batch of the trace
@@ -1673,6 +1673,58 @@ Status TraceAnalyzer::OutputAnalysisResult(TraceOperationType op_type,
 }
 
 Status TraceAnalyzer::OutputAnalysisResult(TraceOperationType op_type,
+                                           uint64_t timestamp,
+                                           std::vector<uint32_t> cf_ids,
+                                           std::vector<Slice> keys,
+                                           std::vector<size_t> value_sizes,
+                                           uint64_t tracing_iter_id) {
+  assert(!cf_ids.empty());
+  assert(cf_ids.size() == keys.size());
+  assert(cf_ids.size() == value_sizes.size());
+
+  Status s;
+
+  if (FLAGS_convert_to_human_readable_trace && trace_sequence_f_) {
+    // DeleteRane only writes the begin_key.
+    size_t cnt =
+        op_type == TraceOperationType::kRangeDelete ? 1 : cf_ids.size();
+    for (size_t i = 0; i < cnt; i++) {
+      s = WriteTraceSequence(op_type, cf_ids[i], keys[i], value_sizes[i],
+                             timestamp, tracing_iter_id);
+      if (!s.ok()) {
+        return Status::Corruption("Failed to write the trace sequence to file");
+      }
+    }
+  }
+
+  if (ta_[op_type].sample_count >= sample_max_) {
+    ta_[op_type].sample_count = 0;
+  }
+  if (ta_[op_type].sample_count > 0) {
+    ta_[op_type].sample_count++;
+    return Status::OK();
+  }
+  ta_[op_type].sample_count++;
+
+  if (!ta_[op_type].enabled) {
+    return Status::OK();
+  }
+
+  for (size_t i = 0; i < cf_ids.size(); i++) {
+    // Get query does not have value part, just give a fixed value 10 for easy
+    // calculation.
+    s = KeyStatsInsertion(
+        op_type, cf_ids[i], keys[i].ToString(),
+        value_sizes[i] == 0 ? kShadowValueSize : value_sizes[i], timestamp);
+    if (!s.ok()) {
+      return Status::Corruption("Failed to insert key statistics");
+    }
+  }
+
+  return Status::OK();
+}
+
+Status TraceAnalyzer::OutputAnalysisResult(TraceOperationType op_type,
                                            uint64_t timestamp, uint32_t cf_id,
                                            const Slice& key,
                                            size_t value_size) {
@@ -1682,9 +1734,19 @@ Status TraceAnalyzer::OutputAnalysisResult(TraceOperationType op_type,
 }
 
 Status TraceAnalyzer::OutputAnalysisResult(TraceOperationType op_type,
+                                           uint64_t timestamp, uint32_t cf_id,
+                                           const Slice& key, size_t value_size,
+                                           uint64_t tracing_iter_id) {
+  return OutputAnalysisResult(
+      op_type, timestamp, std::vector<uint32_t>({cf_id}),
+      std::vector<Slice>({key}), std::vector<size_t>({value_size}),
+      tracing_iter_id);
+}
+
+Status TraceAnalyzer::OutputAnalysisResult(TraceOperationType op_type,
                                            uint64_t timestamp,
-                                           uint64_t trace_iter_uid) {
-  auto s = WriteTraceSequence(op_type, trace_iter_uid, timestamp);
+                                           uint64_t tracing_iter_id) {
+  auto s = WriteTraceSequence(op_type, tracing_iter_id, timestamp);
   if (!s.ok()) {
     return Status::Corruption("Failed to process iterator next tracer");
   }
@@ -1878,13 +1940,35 @@ Status TraceAnalyzer::WriteTraceSequence(const uint32_t& type,
   return trace_sequence_f_->Append(printout);
 }
 
+Status TraceAnalyzer::WriteTraceSequence(const uint32_t& type,
+                                         const uint32_t& cf_id,
+                                         const Slice& key,
+                                         const size_t value_size,
+                                         const uint64_t ts,
+                                         const uint64_t tracing_iter_id) {
+  std::string hex_key =
+      ROCKSDB_NAMESPACE::LDBCommand::StringToHex(key.ToString());
+  int ret;
+  ret =
+      snprintf(buffer_, sizeof(buffer_), "%u %u %zu %" PRIu64 " %" PRIu64 "\n",
+               type, cf_id, value_size, ts, tracing_iter_id);
+  if (ret < 0) {
+    return Status::IOError("failed to format the output");
+  }
+  std::string printout(buffer_);
+  if (!FLAGS_no_key) {
+    printout = hex_key + " " + printout;
+  }
+  return trace_sequence_f_->Append(printout);
+}
+
 // Write the trace sequence to file
 Status TraceAnalyzer::WriteTraceSequence(const uint32_t& type,
-                                         const uint64_t trace_iter_uid,
+                                         const uint64_t tracing_iter_id,
                                          const uint64_t ts) {
   int ret;
   ret = snprintf(buffer_, sizeof(buffer_), "%u %" PRIu64 " %" PRIu64 "\n", type,
-                 trace_iter_uid, ts);
+                 ts, tracing_iter_id);
   if (ret < 0) {
     return Status::IOError("failed to format the output");
   }

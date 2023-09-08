@@ -1744,7 +1744,7 @@ Status BlockBasedTable::MaybeReadBlockAndLoadToCache(
           /*block_size=*/usage, rep_->cf_id_for_tracing(),
           /*cf_name=*/"", rep_->level_for_tracing(),
           rep_->sst_number_for_tracing(), lookup_context->caller, is_cache_hit,
-          no_insert, lookup_context->get_id,
+          no_insert, lookup_context->get_id, lookup_context->iter_id,
           lookup_context->get_from_user_specified_snapshot,
           /*referenced_key=*/"");
       // TODO: Should handle this error?
@@ -2168,7 +2168,7 @@ Status BlockBasedTable::Get(const ReadOptions& read_options, const Slice& key,
   // If full filter not useful, Then go into each block
   uint64_t tracing_get_id = get_context->get_tracing_get_id();
   BlockCacheLookupContext lookup_context{
-      TableReaderCaller::kUserGet, tracing_get_id,
+      TableReaderCaller::kUserGet, tracing_get_id, 0,
       /*get_from_user_specified_snapshot=*/read_options.snapshot != nullptr};
   if (block_cache_tracer_ && block_cache_tracer_->is_tracing_enabled()) {
     // Trace the key since it contains both user key and sequence number.
@@ -2218,7 +2218,7 @@ Status BlockBasedTable::Get(const ReadOptions& read_options, const Slice& key,
       }
 
       BlockCacheLookupContext lookup_data_block_context{
-          TableReaderCaller::kUserGet, tracing_get_id,
+          TableReaderCaller::kUserGet, tracing_get_id, 0,
           /*get_from_user_specified_snapshot=*/read_options.snapshot !=
               nullptr};
       bool does_referenced_key_exist = false;
@@ -2293,7 +2293,7 @@ Status BlockBasedTable::Get(const ReadOptions& read_options, const Slice& key,
             rep_->sst_number_for_tracing(), lookup_data_block_context.caller,
             lookup_data_block_context.is_cache_hit,
             lookup_data_block_context.no_insert,
-            lookup_data_block_context.get_id,
+            lookup_data_block_context.get_id, lookup_data_block_context.iter_id,
             lookup_data_block_context.get_from_user_specified_snapshot,
             /*referenced_key=*/"", referenced_data_size,
             lookup_data_block_context.num_keys_in_block,
@@ -2346,7 +2346,7 @@ Status BlockBasedTable::MultiGetFilter(const ReadOptions& read_options,
     tracing_mget_id = mget_range->begin()->get_context->get_tracing_get_id();
   }
   BlockCacheLookupContext lookup_context{
-      TableReaderCaller::kUserMultiGet, tracing_mget_id,
+      TableReaderCaller::kUserMultiGet, tracing_mget_id, 0,
       /*_get_from_user_specified_snapshot=*/read_options.snapshot != nullptr};
   FullFilterKeysMayMatch(filter, mget_range, no_io, prefix_extractor,
                          &lookup_context, read_options.rate_limiter_priority);

@@ -1574,7 +1574,10 @@ Status BlockCacheTraceAnalyzer::Analyze() {
                                     !access.is_cache_hit);
     caller_miss_ratio_stats_map_[access.caller].UpdateMetrics(
         access.access_timestamp, is_user_access(access.caller),
-        access.is_cache_hit == !access.is_cache_hit);
+        !access.is_cache_hit);
+    block_type_miss_ratio_stats_map_[access.block_type].UpdateMetrics(
+        access.access_timestamp, is_user_access(access.caller),
+        !access.is_cache_hit);
 
     if (cache_simulator_) {
       cache_simulator_->Access(access);
@@ -1599,6 +1602,13 @@ Status BlockCacheTraceAnalyzer::Analyze() {
       }
       print_break_lines(/*num_break_lines=*/1);
 
+      for (const auto& block_type : block_type_miss_ratio_stats_map_) {
+        fprintf(stdout, "Block type %s: Observed miss ratio %.2f\n",
+                block_type_to_string(block_type.first).c_str(),
+                block_type.second.miss_ratio());
+      }
+      print_break_lines(/*num_break_lines=*/1);
+
       time_interval++;
     }
   }
@@ -1615,6 +1625,11 @@ Status BlockCacheTraceAnalyzer::Analyze() {
   for (const auto& caller : caller_miss_ratio_stats_map_) {
     fprintf(stdout, "Caller %s: Observed miss ratio %.2f\n",
             caller_to_string(caller.first).c_str(), caller.second.miss_ratio());
+  }
+  for (const auto& block_type : block_type_miss_ratio_stats_map_) {
+    fprintf(stdout, "Block type %s: Observed miss ratio %.2f\n",
+            block_type_to_string(block_type.first).c_str(),
+            block_type.second.miss_ratio());
   }
   print_break_lines(/*num_break_lines=*/1);
   return s;

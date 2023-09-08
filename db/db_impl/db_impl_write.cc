@@ -211,11 +211,18 @@ Status DBImpl::WriteImpl(const WriteOptions& write_options,
     if (tracer_.get() == nullptr) {
       TraceOptions query_trace_options;
       TraceOptions block_trace_options;
-      query_trace_options.max_trace_file_size = 1024;
-      std::string query_trace_filename =
-          "/tmp/trace/trace." + std::to_string(env_->NowMicros());
-      std::string block_trace_filename =
-          "/tmp/trace/block_cache_trace." + std::to_string(env_->NowMicros());
+      std::string processed_dbname = dbname_;
+      for (auto& c : processed_dbname) {
+        if (c == '/') {
+          c = '_';
+        }
+      }
+      std::string query_trace_filename = "/tmp/trace/trace" + processed_dbname +
+                                         '.' +
+                                         std::to_string(env_->NowMicros());
+      std::string block_trace_filename = "/tmp/trace/block_cache_trace" +
+                                         processed_dbname + '.' +
+                                         std::to_string(env_->NowMicros());
       EnvOptions env_opts;
       std::unique_ptr<TraceWriter> query_trace_writer;
       std::unique_ptr<TraceWriter> block_trace_writer;
