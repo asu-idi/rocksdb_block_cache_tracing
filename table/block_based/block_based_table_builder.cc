@@ -1521,7 +1521,7 @@ Status BlockBasedTableBuilder::InsertBlockInCache(const Slice& block_contents,
 
     assert(block_holder->own_bytes());
     size_t charge = block_holder->ApproximateMemoryUsage();
-    s = block_cache->Insert(
+    s = block_cache->IntelligentInsert(
         key.AsSlice(), block_holder.get(),
         BlocklikeTraits<TBlocklike>::GetCacheItemHelper(block_type), charge,
         nullptr, Cache::Priority::LOW);

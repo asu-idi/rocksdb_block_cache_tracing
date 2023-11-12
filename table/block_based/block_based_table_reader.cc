@@ -384,16 +384,16 @@ Cache::Handle* BlockBasedTable::GetEntryFromCache(
     const Cache::CreateCallback& create_cb, Cache::Priority priority) const {
   Cache::Handle* cache_handle = nullptr;
   if (cache_tier == CacheTier::kNonVolatileBlockTier) {
-    cache_handle = block_cache->Lookup(key, cache_helper, create_cb, priority,
+    cache_handle = block_cache->IntelligentLookup(key, cache_helper, create_cb, priority,
                                        wait, rep_->ioptions.statistics.get());
   } else {
-    cache_handle = block_cache->Lookup(key, rep_->ioptions.statistics.get());
+    cache_handle = block_cache->IntelligentLookup(key, rep_->ioptions.statistics.get());
   }
 
   // Avoid updating metrics here if the handle is not complete yet. This
   // happens with MultiGet and secondary cache. So update the metrics only
   // if its a miss, or a hit and value is ready
-  if (!cache_handle || block_cache->Value(cache_handle)) {
+  if (!cache_handle || block_cache->IntelligentValue(cache_handle)) {
     if (cache_handle != nullptr) {
       UpdateCacheHitMetrics(block_type, get_context,
                             block_cache->GetUsage(cache_handle));
@@ -413,10 +413,10 @@ Status BlockBasedTable::InsertEntryToCache(
     Cache::Handle** cache_handle, Cache::Priority priority) const {
   Status s = Status::OK();
   if (cache_tier == CacheTier::kNonVolatileBlockTier) {
-    s = block_cache->Insert(key, block_holder.get(), cache_helper, charge,
+    s = block_cache->IntelligentInsert(key, block_holder.get(), cache_helper, charge,
                             cache_handle, priority);
   } else {
-    s = block_cache->Insert(key, block_holder.get(), charge,
+    s = block_cache->IntelligentInsert(key, block_holder.get(), charge,
                             cache_helper->del_cb, cache_handle, priority);
   }
   if (s.ok()) {
@@ -1316,7 +1316,7 @@ Status BlockBasedTable::GetDataBlockFromCache(
         priority);
     if (cache_handle != nullptr) {
       out_parsed_block->SetCachedValue(
-          reinterpret_cast<TBlocklike*>(block_cache->Value(cache_handle)),
+          reinterpret_cast<TBlocklike*>(block_cache->IntelligentValue(cache_handle)),
           block_cache, cache_handle);
       return s;
     }

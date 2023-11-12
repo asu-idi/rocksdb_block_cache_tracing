@@ -550,9 +550,9 @@ Status CheckCacheOptionCompatibility(const BlockBasedTableOptions& bbto) {
   // If we get something different from what we inserted, that indicates
   // dangerously overlapping key spaces.
   if (bbto.block_cache) {
-    auto handle = bbto.block_cache->Lookup(sentinel_key.AsSlice());
+    auto handle = bbto.block_cache->IntelligentLookup(sentinel_key.AsSlice());
     if (handle) {
-      auto v = static_cast<char*>(bbto.block_cache->Value(handle));
+      auto v = static_cast<char*>(bbto.block_cache->IntelligentValue(handle));
       char c = *v;
       bbto.block_cache->Release(handle);
       if (v == &kCompressedBlockCacheMarker) {

@@ -294,6 +294,7 @@ extern std::shared_ptr<Cache> NewClockCache(
 
 class Cache {
  public:
+  std::shared_ptr<Cache> metadata_cache;
   // Depending on implementation, cache entries with higher priority levels
   // could be less likely to get evicted than entries with lower priority
   // levels. The "high" priority level applies to certain SST metablocks (e.g.
@@ -421,6 +422,17 @@ class Cache {
                         DeleterFn deleter, Handle** handle = nullptr,
                         Priority priority = Priority::LOW) = 0;
 
+  virtual Status IntelligentInsert(const Slice& key, void* value, size_t charge,
+                                   DeleterFn deleter, Handle** handle = nullptr,
+                                   Priority priority = Priority::LOW,
+                                   bool isDataType = true) {
+    if (isDataType) {
+      return Insert(key, value, charge, deleter, handle, priority);
+    }
+    return metadata_cache->Insert(key, value, charge, deleter, handle,
+                                  priority);
+  }
+
   // If the cache has no mapping for "key", returns nullptr.
   //
   // Else return a handle that corresponds to the mapping.  The caller
@@ -429,6 +441,15 @@ class Cache {
   // If stats is not nullptr, relative tickers could be used inside the
   // function.
   virtual Handle* Lookup(const Slice& key, Statistics* stats = nullptr) = 0;
+
+  virtual Handle* IntelligentLookup(const Slice& key,
+                                    Statistics* stats = nullptr,
+                                    bool isDataType = true) {
+    if (isDataType) {
+      return Lookup(key, stats);
+    }
+    return metadata_cache->Lookup(key, stats);
+  }
 
   // Increments the reference count for the handle if it refers to an entry in
   // the cache. Returns true if refcount was incremented; otherwise, returns
@@ -439,9 +460,9 @@ class Cache {
   /**
    * Release a mapping returned by a previous Lookup(). A released entry might
    * still remain in cache in case it is later looked up by others. If
-   * erase_if_last_ref is set then it also erases it from the cache if there is
-   * no other reference to  it. Erasing it should call the deleter function that
-   * was provided when the entry was inserted.
+   * erase_if_last_ref is set then it also erases it from the cache if there
+   * is no other reference to  it. Erasing it should call the deleter function
+   * that was provided when the entry was inserted.
    *
    * Returns true if the entry was also erased.
    */
@@ -454,6 +475,13 @@ class Cache {
   // REQUIRES: handle must not have been released yet.
   // REQUIRES: handle must have been returned by a method on *this.
   virtual void* Value(Handle* handle) = 0;
+
+  virtual void* IntelligentValue(Handle* handle, bool isDataType = true) {
+    if (isDataType) {
+      return Value(handle);
+    }
+    return metadata_cache->Value(handle);
+  }
 
   // If the cache contains the entry for the key, erase it.  Note that the
   // underlying entry will be kept around until all existing handles
@@ -606,11 +634,22 @@ class Cache {
     return Insert(key, value, charge, helper->del_cb, handle, priority);
   }
 
-  // Lookup the key in the primary and secondary caches (if one is configured).
-  // The create_cb callback function object will be used to contruct the
-  // cached object.
-  // If none of the caches have the mapping for the key, returns nullptr.
-  // Else, returns a handle that corresponds to the mapping.
+  virtual Status IntelligentInsert(const Slice& key, void* value,
+                                   const CacheItemHelper* helper, size_t charge,
+                                   Handle** handle = nullptr,
+                                   Priority priority = Priority::LOW,
+                                   bool isDataType = true) {
+    if (isDataType) {
+      return Insert(key, value, helper, charge, handle, priority);
+    }
+    return metadata_cache->Insert(key, value, helper, charge, handle, priority);
+  }
+
+  // Lookup the key in the primary and secondary caches (if one is
+  // configured). The create_cb callback function object will be used to
+  // contruct the cached object. If none of the caches have the mapping for
+  // the key, returns nullptr. Else, returns a handle that corresponds to the
+  // mapping.
   //
   // This call may promote the object from the secondary cache (if one is
   // configured, and has the given key) to the primary cache.
@@ -632,12 +671,13 @@ class Cache {
   // will not block.
   //
   // IMPORTANT: Pending handles are not thread-safe, and only these functions
-  // are allowed on them: Value(), IsReady(), Wait(), WaitAll(). Even Release()
-  // can only come after Wait() or WaitAll() even though a reference is held.
+  // are allowed on them: Value(), IsReady(), Wait(), WaitAll(). Even
+  // Release() can only come after Wait() or WaitAll() even though a reference
+  // is held.
   //
   // Only Wait()/WaitAll() gets a Handle out of a Pending state. (Waiting is
-  // safe and has no effect on other handle states.) After waiting on a Handle,
-  // it is in one of two states:
+  // safe and has no effect on other handle states.) After waiting on a
+  // Handle, it is in one of two states:
   // * Present - if Value() != nullptr
   // * Failed - if Value() == nullptr, such as if the secondary cache
   // initially thought it had the value but actually did not.
@@ -651,6 +691,19 @@ class Cache {
                          Priority /*priority*/, bool /*wait*/,
                          Statistics* stats = nullptr) {
     return Lookup(key, stats);
+  }
+
+  virtual Handle* IntelligentLookup(const Slice& key,
+                                    const CacheItemHelper* helper_cb,
+                                    const CreateCallback& create_cb,
+                                    Priority priority, bool wait,
+                                    Statistics* stats = nullptr,
+                                    bool isDataType = true) {
+    if (isDataType) {
+      return Lookup(key, helper_cb, create_cb, priority, wait, stats);
+    }
+    return metadata_cache->Lookup(key, helper_cb, create_cb, priority, wait,
+                                  stats);
   }
 
   // Release a mapping returned by a previous Lookup(). The "useful"
@@ -691,8 +744,8 @@ class Cache {
 //
 // Developer notes: Adding a new enum to this class requires corresponding
 // updates to `kCacheEntryRoleToCamelString` and
-// `kCacheEntryRoleToHyphenString`. Do not add to this enum after `kMisc` since
-// `kNumCacheEntryRoles` assumes `kMisc` comes last.
+// `kCacheEntryRoleToHyphenString`. Do not add to this enum after `kMisc`
+// since `kNumCacheEntryRoles` assumes `kMisc` comes last.
 enum class CacheEntryRole {
   // Block-based table data block
   kDataBlock,
