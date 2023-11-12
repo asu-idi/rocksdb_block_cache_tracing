@@ -384,10 +384,12 @@ Cache::Handle* BlockBasedTable::GetEntryFromCache(
     const Cache::CreateCallback& create_cb, Cache::Priority priority) const {
   Cache::Handle* cache_handle = nullptr;
   if (cache_tier == CacheTier::kNonVolatileBlockTier) {
-    cache_handle = block_cache->IntelligentLookup(key, cache_helper, create_cb, priority,
+    cache_handle =
+        block_cache->IntelligentLookup(key, cache_helper, create_cb, priority,
                                        wait, rep_->ioptions.statistics.get());
   } else {
-    cache_handle = block_cache->IntelligentLookup(key, rep_->ioptions.statistics.get());
+    cache_handle =
+        block_cache->IntelligentLookup(key, rep_->ioptions.statistics.get());
   }
 
   // Avoid updating metrics here if the handle is not complete yet. This
@@ -413,11 +415,12 @@ Status BlockBasedTable::InsertEntryToCache(
     Cache::Handle** cache_handle, Cache::Priority priority) const {
   Status s = Status::OK();
   if (cache_tier == CacheTier::kNonVolatileBlockTier) {
-    s = block_cache->IntelligentInsert(key, block_holder.get(), cache_helper, charge,
-                            cache_handle, priority);
+    s = block_cache->IntelligentInsert(key, block_holder.get(), cache_helper,
+                                       charge, cache_handle, priority);
   } else {
     s = block_cache->IntelligentInsert(key, block_holder.get(), charge,
-                            cache_helper->del_cb, cache_handle, priority);
+                                       cache_helper->del_cb, cache_handle,
+                                       priority);
   }
   if (s.ok()) {
     // Cache took ownership
@@ -1316,7 +1319,8 @@ Status BlockBasedTable::GetDataBlockFromCache(
         priority);
     if (cache_handle != nullptr) {
       out_parsed_block->SetCachedValue(
-          reinterpret_cast<TBlocklike*>(block_cache->IntelligentValue(cache_handle)),
+          reinterpret_cast<TBlocklike*>(
+              block_cache->IntelligentValue(cache_handle)),
           block_cache, cache_handle);
       return s;
     }

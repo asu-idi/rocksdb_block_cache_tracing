@@ -93,9 +93,9 @@ TBlockIter* BlockBasedTable::NewDataBlockIterator(
         // insert a dummy record to block cache to track the memory usage
         Cache::Handle* cache_handle = nullptr;
         CacheKey key = CacheKey::CreateUniqueForCacheLifetime(block_cache);
-        s = block_cache->IntelligentInsert(key.AsSlice(), nullptr,
-                                block.GetValue()->ApproximateMemoryUsage(),
-                                nullptr, &cache_handle);
+        s = block_cache->IntelligentInsert(
+            key.AsSlice(), nullptr, block.GetValue()->ApproximateMemoryUsage(),
+            nullptr, &cache_handle);
 
         if (s.ok()) {
           assert(cache_handle != nullptr);
@@ -151,9 +151,9 @@ TBlockIter* BlockBasedTable::NewDataBlockIterator(const ReadOptions& ro,
         // insert a dummy record to block cache to track the memory usage
         Cache::Handle* cache_handle = nullptr;
         CacheKey key = CacheKey::CreateUniqueForCacheLifetime(block_cache);
-        s = block_cache->IntelligentInsert(key.AsSlice(), nullptr,
-                                block.GetValue()->ApproximateMemoryUsage(),
-                                nullptr, &cache_handle);
+        s = block_cache->IntelligentInsert(
+            key.AsSlice(), nullptr, block.GetValue()->ApproximateMemoryUsage(),
+            nullptr, &cache_handle);
 
         if (s.ok()) {
           assert(cache_handle != nullptr);
