@@ -384,18 +384,19 @@ Cache::Handle* BlockBasedTable::GetEntryFromCache(
     const Cache::CreateCallback& create_cb, Cache::Priority priority) const {
   Cache::Handle* cache_handle = nullptr;
   if (cache_tier == CacheTier::kNonVolatileBlockTier) {
-    cache_handle =
-        block_cache->IntelligentLookup(key, cache_helper, create_cb, priority,
-                                       wait, rep_->ioptions.statistics.get());
+    cache_handle = block_cache->IntelligentLookup(
+        key, cache_helper, create_cb, priority, wait,
+        rep_->ioptions.statistics.get(), block_type == BlockType::kData);
   } else {
-    cache_handle =
-        block_cache->IntelligentLookup(key, rep_->ioptions.statistics.get());
+    cache_handle = block_cache->IntelligentLookup(
+        key, rep_->ioptions.statistics.get(), block_type == BlockType::kData);
   }
 
   // Avoid updating metrics here if the handle is not complete yet. This
   // happens with MultiGet and secondary cache. So update the metrics only
   // if its a miss, or a hit and value is ready
-  if (!cache_handle || block_cache->IntelligentValue(cache_handle)) {
+  if (!cache_handle || block_cache->IntelligentValue(
+                           cache_handle, block_type == BlockType::kData)) {
     if (cache_handle != nullptr) {
       UpdateCacheHitMetrics(block_type, get_context,
                             block_cache->GetUsage(cache_handle));
@@ -412,15 +413,17 @@ Status BlockBasedTable::InsertEntryToCache(
     const CacheTier& cache_tier, Cache* block_cache, const Slice& key,
     const Cache::CacheItemHelper* cache_helper,
     std::unique_ptr<TBlocklike>&& block_holder, size_t charge,
-    Cache::Handle** cache_handle, Cache::Priority priority) const {
+    Cache::Handle** cache_handle, Cache::Priority priority,
+    bool isDataType) const {
   Status s = Status::OK();
   if (cache_tier == CacheTier::kNonVolatileBlockTier) {
     s = block_cache->IntelligentInsert(key, block_holder.get(), cache_helper,
-                                       charge, cache_handle, priority);
+                                       charge, cache_handle, priority,
+                                       isDataType);
   } else {
     s = block_cache->IntelligentInsert(key, block_holder.get(), charge,
                                        cache_helper->del_cb, cache_handle,
-                                       priority);
+                                       priority, isDataType);
   }
   if (s.ok()) {
     // Cache took ownership
@@ -1319,8 +1322,8 @@ Status BlockBasedTable::GetDataBlockFromCache(
         priority);
     if (cache_handle != nullptr) {
       out_parsed_block->SetCachedValue(
-          reinterpret_cast<TBlocklike*>(
-              block_cache->IntelligentValue(cache_handle)),
+          reinterpret_cast<TBlocklike*>(block_cache->IntelligentValue(
+              cache_handle, block_type == BlockType::kData)),
           block_cache, cache_handle);
       return s;
     }
@@ -1387,7 +1390,8 @@ Status BlockBasedTable::GetDataBlockFromCache(
       s = InsertEntryToCache(
           rep_->ioptions.lowest_used_cache_tier, block_cache, cache_key,
           BlocklikeTraits<TBlocklike>::GetCacheItemHelper(block_type),
-          std::move(block_holder), charge, &cache_handle, priority);
+          std::move(block_holder), charge, &cache_handle, priority,
+          block_type == BlockType::kData);
       if (s.ok()) {
         assert(cache_handle != nullptr);
         out_parsed_block->SetCachedValue(block_holder_raw_ptr, block_cache,
@@ -1475,7 +1479,7 @@ Status BlockBasedTable::PutDataBlockToCache(
         cache_key,
         BlocklikeTraits<BlockContents>::GetCacheItemHelper(block_type),
         std::move(block_cont_for_comp_cache), charge, nullptr,
-        Cache::Priority::LOW);
+        Cache::Priority::LOW, block_type == BlockType::kData);
 
     if (s.ok()) {
       // Avoid the following code to delete this cached block.
@@ -1493,7 +1497,8 @@ Status BlockBasedTable::PutDataBlockToCache(
     s = InsertEntryToCache(
         rep_->ioptions.lowest_used_cache_tier, block_cache, cache_key,
         BlocklikeTraits<TBlocklike>::GetCacheItemHelper(block_type),
-        std::move(block_holder), charge, &cache_handle, priority);
+        std::move(block_holder), charge, &cache_handle, priority,
+        block_type == BlockType::kData);
     if (s.ok()) {
       assert(cache_handle != nullptr);
       out_parsed_block->SetCachedValue(block_holder_raw_ptr, block_cache,

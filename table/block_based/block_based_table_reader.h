@@ -329,7 +329,7 @@ class BlockBasedTable : public TableReader {
                             const Cache::CacheItemHelper* cache_helper,
                             std::unique_ptr<TBlocklike>&& block_holder,
                             size_t charge, Cache::Handle** cache_handle,
-                            Cache::Priority priority) const;
+                            Cache::Priority priority, bool isDataType) const;
 
   // Either Block::NewDataIterator() or Block::NewIndexIterator().
   template <typename TBlockIter>

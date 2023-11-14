@@ -95,7 +95,8 @@ TBlockIter* BlockBasedTable::NewDataBlockIterator(
         CacheKey key = CacheKey::CreateUniqueForCacheLifetime(block_cache);
         s = block_cache->IntelligentInsert(
             key.AsSlice(), nullptr, block.GetValue()->ApproximateMemoryUsage(),
-            nullptr, &cache_handle);
+            nullptr, &cache_handle, Cache::Priority::LOW,
+            block_type == BlockType::kData);
 
         if (s.ok()) {
           assert(cache_handle != nullptr);

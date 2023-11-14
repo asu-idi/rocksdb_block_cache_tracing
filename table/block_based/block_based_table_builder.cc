@@ -1524,7 +1524,7 @@ Status BlockBasedTableBuilder::InsertBlockInCache(const Slice& block_contents,
     s = block_cache->IntelligentInsert(
         key.AsSlice(), block_holder.get(),
         BlocklikeTraits<TBlocklike>::GetCacheItemHelper(block_type), charge,
-        nullptr, Cache::Priority::LOW);
+        nullptr, Cache::Priority::LOW, block_type == BlockType::kData);
 
     if (s.ok()) {
       // Release ownership of block_holder.
