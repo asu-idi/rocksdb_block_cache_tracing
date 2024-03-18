@@ -92,9 +92,8 @@ void LRUHandleTable::Resize() {
 
   uint32_t old_length = uint32_t{1} << length_bits_;
   int new_length_bits = length_bits_ + 1;
-  std::unique_ptr<LRUHandle* []> new_list {
-    new LRUHandle* [size_t{1} << new_length_bits] {}
-  };
+  std::unique_ptr<LRUHandle*[]> new_list{
+      new LRUHandle* [size_t{1} << new_length_bits] {}};
   uint32_t count = 0;
   for (uint32_t i = 0; i < old_length; i++) {
     LRUHandle* h = list_[i];
@@ -154,6 +153,7 @@ void LRUCacheShard::EraseUnRefEntries() {
       old->SetInCache(false);
       assert(usage_ >= old->total_charge);
       usage_ -= old->total_charge;
+      assert(usage_ >= lru_usage_);
       last_reference_list.push_back(old);
     }
   }
@@ -330,6 +330,7 @@ void LRUCacheShard::EvictFromLRU(size_t charge,
     old->SetInCache(false);
     assert(usage_ >= old->total_charge);
     usage_ -= old->total_charge;
+    assert(usage_ >= lru_usage_);
     deleted->push_back(old);
   }
 }
@@ -405,6 +406,7 @@ Status LRUCacheShard::InsertItem(LRUHandle* e, LRUHandle** handle,
           LRU_Remove(old);
           assert(usage_ >= old->total_charge);
           usage_ -= old->total_charge;
+          assert(usage_ >= lru_usage_);
           last_reference_list.push_back(old);
         }
       }
@@ -664,6 +666,7 @@ bool LRUCacheShard::Release(LRUHandle* e, bool /*useful*/,
     if (last_reference) {
       assert(usage_ >= e->total_charge);
       usage_ -= e->total_charge;
+      assert(usage_ >= lru_usage_);
     }
   }
 
@@ -725,6 +728,7 @@ void LRUCacheShard::Erase(const Slice& key, uint32_t hash) {
         LRU_Remove(e);
         assert(usage_ >= e->total_charge);
         usage_ -= e->total_charge;
+        assert(usage_ >= lru_usage_);
         last_reference = true;
       }
     }

@@ -48,6 +48,8 @@ if(POLICY CMP0042)
   cmake_policy(SET CMP0042 NEW)
 endif()
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 if(NOT CMAKE_BUILD_TYPE)
   if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
     set(default_build_type "Debug")

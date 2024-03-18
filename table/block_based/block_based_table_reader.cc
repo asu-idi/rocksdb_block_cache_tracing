@@ -1321,10 +1321,18 @@ Status BlockBasedTable::GetDataBlockFromCache(
         BlocklikeTraits<TBlocklike>::GetCacheItemHelper(block_type), create_cb,
         priority);
     if (cache_handle != nullptr) {
-      out_parsed_block->SetCachedValue(
-          reinterpret_cast<TBlocklike*>(block_cache->IntelligentValue(
-              cache_handle, block_type == BlockType::kData)),
-          block_cache, cache_handle);
+      if (block_type == BlockType::kData) {
+        out_parsed_block->SetCachedValue(
+            reinterpret_cast<TBlocklike*>(block_cache->IntelligentValue(
+                cache_handle, block_type == BlockType::kData)),
+            block_cache, cache_handle);
+      } else {
+        out_parsed_block->SetCachedValue(
+            reinterpret_cast<TBlocklike*>(block_cache->IntelligentValue(
+                cache_handle, block_type == BlockType::kData)),
+            block_cache->metadata_cache.get(), cache_handle);
+      }
+      
       return s;
     }
   }
@@ -1342,13 +1350,14 @@ Status BlockBasedTable::GetDataBlockFromCache(
       CacheTier::kNonVolatileBlockTier) {
     Cache::CreateCallback create_cb_special = GetCreateCallback<BlockContents>(
         read_amp_bytes_per_bit, statistics, using_zstd, filter_policy);
-    block_cache_compressed_handle = block_cache_compressed->Lookup(
+    block_cache_compressed_handle = block_cache_compressed->IntelligentLookup(
         cache_key,
         BlocklikeTraits<BlockContents>::GetCacheItemHelper(block_type),
-        create_cb_special, priority, true);
+        create_cb_special, priority, true, nullptr,
+        block_type == BlockType::kData);
   } else {
-    block_cache_compressed_handle =
-        block_cache_compressed->Lookup(cache_key, statistics);
+    block_cache_compressed_handle = block_cache_compressed->IntelligentLookup(
+        cache_key, statistics, block_type == BlockType::kData);
   }
 
   // if we found in the compressed cache, then uncompress and insert into
@@ -1360,8 +1369,9 @@ Status BlockBasedTable::GetDataBlockFromCache(
 
   // found compressed block
   RecordTick(statistics, BLOCK_CACHE_COMPRESSED_HIT);
-  compressed_block = reinterpret_cast<BlockContents*>(
-      block_cache_compressed->Value(block_cache_compressed_handle));
+  compressed_block =
+      reinterpret_cast<BlockContents*>(block_cache_compressed->IntelligentValue(
+          block_cache_compressed_handle, block_type == BlockType::kData));
   CompressionType compression_type = GetBlockCompressionType(*compressed_block);
   assert(compression_type != kNoCompression);
 
@@ -1394,9 +1404,14 @@ Status BlockBasedTable::GetDataBlockFromCache(
           block_type == BlockType::kData);
       if (s.ok()) {
         assert(cache_handle != nullptr);
-        out_parsed_block->SetCachedValue(block_holder_raw_ptr, block_cache,
-                                         cache_handle);
-
+        if (block_type == BlockType::kData) {
+          out_parsed_block->SetCachedValue(block_holder_raw_ptr, block_cache,
+                                           cache_handle);
+        } else {
+          out_parsed_block->SetCachedValue(block_holder_raw_ptr,
+                                           block_cache->metadata_cache.get(),
+                                           cache_handle);
+        }
         UpdateCacheInsertionMetrics(block_type, get_context, charge,
                                     s.IsOkOverwritten(), rep_->ioptions.stats);
       } else {
@@ -1408,7 +1423,8 @@ Status BlockBasedTable::GetDataBlockFromCache(
   }
 
   // Release hold on compressed cache entry
-  block_cache_compressed->Release(block_cache_compressed_handle);
+  block_cache_compressed->IntelligentRelease(block_cache_compressed_handle,
+                                             block_type == BlockType::kData);
   return s;
 }
 
@@ -1501,9 +1517,14 @@ Status BlockBasedTable::PutDataBlockToCache(
         block_type == BlockType::kData);
     if (s.ok()) {
       assert(cache_handle != nullptr);
-      out_parsed_block->SetCachedValue(block_holder_raw_ptr, block_cache,
-                                       cache_handle);
-
+      if(block_type == BlockType::kData) {
+        out_parsed_block->SetCachedValue(block_holder_raw_ptr, block_cache,
+                                         cache_handle);
+      } else {
+        out_parsed_block->SetCachedValue(block_holder_raw_ptr,
+                                         block_cache->metadata_cache.get(),
+                                         cache_handle);
+      }
       UpdateCacheInsertionMetrics(block_type, get_context, charge,
                                   s.IsOkOverwritten(), rep_->ioptions.stats);
     } else {

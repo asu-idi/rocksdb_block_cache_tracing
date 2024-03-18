@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <string>
 
@@ -288,7 +289,7 @@ struct HyperClockCacheOptions : public ShardedCacheOptions {
 // simply returns a new LRUCache for functional compatibility.
 extern std::shared_ptr<Cache> NewClockCache(
     size_t capacity, int num_shard_bits = -1,
-    bool strict_capacity_limit = false,
+    bool strict_capacity_limit = false, 
     CacheMetadataChargePolicy metadata_charge_policy =
         kDefaultCacheMetadataChargePolicy);
 
@@ -469,6 +470,15 @@ class Cache {
   // REQUIRES: handle must not have been released yet.
   // REQUIRES: handle must have been returned by a method on *this.
   virtual bool Release(Handle* handle, bool erase_if_last_ref = false) = 0;
+
+  virtual bool IntelligentRelease(Handle* handle,
+                                  bool erase_if_last_ref = false,
+                                  bool isDataType = true) {
+    if (isDataType) {
+      return Release(handle, erase_if_last_ref);
+    }
+    return metadata_cache->Release(handle, erase_if_last_ref);
+  }
 
   // Return the value encapsulated in a handle returned by a
   // successful Lookup().

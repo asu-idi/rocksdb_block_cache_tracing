@@ -4686,6 +4686,7 @@ class Benchmark {
         // nullptr), and our regression tests assume this will be the shared
         // block cache, even with OPTIONS file provided.
         table_options->block_cache = cache_;
+        table_options->block_cache->metadata_cache = NewCache(FLAGS_block_size);
       }
       if (table_options->filter_policy == nullptr) {
         if (FLAGS_bloom_bits < 0) {
